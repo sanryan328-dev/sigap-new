@@ -1,0 +1,47 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* ── @font-face: Font Turnamen ── */
+/* Letakkan file font (.woff2 / .woff) di public/fonts/ lalu aktifkan blok di bawah */
+/*
+@font-face {
+  font-family: 'Turnamen';
+  src: url('/fonts/Turnamen-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Turnamen';
+  src: url('/fonts/Turnamen-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+*/
+
+@theme {
+  /* ── Font Family ── */
+  --font-family-sans: 'Turnamen', sans-serif;
+
+  /* ── Font Weight ── */
+  --font-weight-normal: 400;
+  --font-weight-bold: 700;
+
+  /* ── Font Size (skala rasio matematik) ── */
+  --font-size-sm: 0.75rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.15rem;
+  --font-size-xl: 1.333rem;
+  --font-size-2xl: 1.777rem;
+  --font-size-3xl: 2.369rem;
+  --font-size-4xl: 3.158rem;
+  --font-size-5xl: 4.210rem;
+
+  /* ── Palet Warna Kontras Tinggi ── */
+  --color-text: #060f1a;
+  --color-background: #f1f6fc;
+  --color-primary: #367cce;
+  --color-secondary: #e3a98b;
+  --color-accent: #bdd962;
+}
