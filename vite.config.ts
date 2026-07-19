@@ -23,26 +23,29 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      devOptions: {
+        enabled: true,
+      },
       includeAssets: [
-        'icons/icon-64.png',
         'icons/icon-192.png',
         'icons/icon-512.png',
       ],
       manifest: {
+        id: '/',
         name: 'SIGAP SPENSAWA',
         short_name: 'SIGAP',
-        description: 'Sistem Informasi Guru Aktif dan Pengelolaan Akademik SMP Negeri 1 Purwokerto',
-        start_url: '/',
+        description: 'Sistem Informasi Penilaian & Agenda Guru SPENSAWA',
+        start_url: '.',
         display: 'standalone',
-        background_color: '#f8fafc',
-        theme_color: '#4f46e5',
-        orientation: 'portrait-primary',
+        display_override: ['window-controls-overlay', 'standalone'],
+        background_color: '#f1f6fc',
+        theme_color: '#367cce',
+        orientation: 'portrait',
+        lang: 'id-ID',
+        dir: 'ltr',
+        prefer_related_applications: false,
+        categories: ['education', 'productivity'],
         icons: [
-          {
-            src: '/icons/icon-64.png',
-            sizes: '64x64',
-            type: 'image/png',
-          },
           {
             src: '/icons/icon-192.png',
             sizes: '192x192',
@@ -58,9 +61,10 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg,jpg,jpeg,woff2,woff}'],
+        globPatterns: ['**/*.{js,css,html,png,svg,jpg,jpeg,woff2,woff,ico,webp}'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//],
         navigationPreload: true,
         runtimeCaching: [
           {
