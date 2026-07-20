@@ -15,7 +15,7 @@ const BULAN = [
 interface ModalUnduhProps {
   open: boolean;
   onClose: () => void;
-  jenis: 'nilai' | 'jurnal' | 'bk' | null;
+  jenis: 'nilai' | 'jurnal' | 'bk' | 'agenda' | null;
   daftarKelas: string[];
   mataPelajaranData: MapelEntry[];
   isGureBK?: boolean;
@@ -47,7 +47,8 @@ export default function ModalUnduh({
     ? bersihMapel.find((e) => e.mapel === mapel)?.kelas ?? []
     : [];
   const butuhMapel = jenis === 'nilai' || jenis === 'jurnal';
-  const butuhBulan = jenis === 'jurnal' || jenis === 'bk';
+  const butuhBulan = jenis === 'jurnal' || jenis === 'bk' || jenis === 'agenda';
+  const butuhKelas = butuhMapel;
 
   useEffect(() => {
     if (open) {
@@ -66,7 +67,7 @@ export default function ModalUnduh({
   const siap =
     (!butuhBulan || bulan) &&
     (!butuhMapel || mapel) &&
-    kelas;
+    (!butuhKelas || kelas);
 
   const judul =
     jenis === 'nilai'
@@ -75,7 +76,9 @@ export default function ModalUnduh({
         ? 'Unduh Rekap Jurnal / Agenda'
         : jenis === 'bk'
           ? 'Unduh Catatan BK'
-          : '';
+          : jenis === 'agenda'
+            ? 'Unduh Agenda Kelas'
+            : '';
 
   const handleUnduh = async () => {
     if (!siap || !jenis) return;
@@ -127,7 +130,7 @@ export default function ModalUnduh({
               {butuhBulan && (
                 <div className="form-control w-full">
                   <label className="label py-1">
-                    <span className="label-text text-xs font-semibold">Pilih Bulan</span>
+                    <span className="label-text text-sm font-semibold">Pilih Bulan</span>
                   </label>
                   <div className="relative">
                     <select
@@ -149,7 +152,7 @@ export default function ModalUnduh({
               {butuhMapel && bersihMapel.length > 1 && (
                 <div className="form-control w-full">
                   <label className="label py-1">
-                    <span className="label-text text-xs font-semibold">Mata Pelajaran</span>
+                    <span className="label-text text-sm font-semibold">Mata Pelajaran</span>
                   </label>
                   <div className="relative">
                     <select
@@ -171,7 +174,7 @@ export default function ModalUnduh({
               {butuhMapel && mapelTunggal && (
                 <div className="form-control w-full">
                   <label className="label py-1">
-                    <span className="label-text text-xs font-semibold">Mata Pelajaran</span>
+                    <span className="label-text text-sm font-semibold">Mata Pelajaran</span>
                   </label>
                   <input
                     type="text"
@@ -182,10 +185,11 @@ export default function ModalUnduh({
                 </div>
               )}
 
-              {/* Dropdown Kelas */}
+              {/* Dropdown Kelas (khusus jurnal/nilai) */}
+              {butuhKelas && (
               <div className="form-control w-full">
                 <label className="label py-1">
-                  <span className="label-text text-xs font-semibold">Kelas</span>
+                  <span className="label-text text-sm font-semibold">Kelas</span>
                 </label>
                 <div className="relative">
                   <select
@@ -207,6 +211,7 @@ export default function ModalUnduh({
                   </p>
                 )}
               </div>
+              )}
             </div>
 
             {/* ── Footer ── */}

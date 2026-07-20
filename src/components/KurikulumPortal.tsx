@@ -194,7 +194,7 @@ export default function KurikulumPortal({ onSwitchRole }: KurikulumPortalProps) 
             <h2 className="mt-0.5 text-xl font-extrabold text-slate-900 sm:text-2xl">
               Kurikulum
             </h2>
-            <p className="text-xs font-medium text-slate-500">
+            <p className="text-sm font-medium text-slate-500">
               Pemantauan KBM, jurnal mengajar, dan log ketidakhadiran guru
             </p>
           </div>
@@ -242,7 +242,7 @@ export default function KurikulumPortal({ onSwitchRole }: KurikulumPortalProps) 
         {/* ── Search + Filter ── */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="join w-full sm:max-w-xs">
-            <div className="join-item flex w-full items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs">
+            <div className="join-item flex w-full items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
               <Search className="size-3.5 shrink-0 text-slate-400" />
               <input
                 type="text"
@@ -285,7 +285,7 @@ export default function KurikulumPortal({ onSwitchRole }: KurikulumPortalProps) 
                     <th className="px-4 py-3 max-w-[140px]">Catatan</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs">
+                <tbody className="divide-y divide-slate-100 text-sm">
                   {loading ? (
                     <tr>
                       <td colSpan={7} className="px-4 py-12 text-center text-slate-400">
@@ -353,7 +353,7 @@ export default function KurikulumPortal({ onSwitchRole }: KurikulumPortalProps) 
                     <th className="px-4 py-3">Verifikasi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs">
+                <tbody className="divide-y divide-slate-100 text-sm">
                   {loading ? (
                     <tr>
                       <td colSpan={6} className="px-4 py-12 text-center text-slate-400">

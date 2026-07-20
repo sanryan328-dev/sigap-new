@@ -38,7 +38,7 @@ export default function WaliKelasDashboard({ setSubMenuWali, setCurrentRole, onS
             <h2 className="mt-0.5 text-xl font-extrabold text-slate-900 sm:text-2xl">
               {profile?.nama_lengkap}
             </h2>
-            <p className="text-xs font-medium text-slate-500">
+            <p className="text-sm font-medium text-slate-500">
               Kelas Binaan: <span className="font-semibold text-emerald-700">{profile?.kelas_wali}</span>
             </p>
           </div>
@@ -86,7 +86,7 @@ export default function WaliKelasDashboard({ setSubMenuWali, setCurrentRole, onS
                 <ClipboardList className="size-5" />
               </div>
               <h3 className="card-title text-sm text-slate-900">Kehadiran Harian Siswa</h3>
-              <p className="text-xs leading-relaxed text-slate-500">
+              <p className="text-sm leading-relaxed text-slate-500">
                 Isi/rekap absensi mandiri harian untuk seluruh siswa di kelas binaan Anda.
               </p>
             </div>
@@ -102,7 +102,7 @@ export default function WaliKelasDashboard({ setSubMenuWali, setCurrentRole, onS
                 <BookOpen className="size-5" />
               </div>
               <h3 className="card-title text-sm text-slate-900">Rekap Catatan BK</h3>
-              <p className="text-xs leading-relaxed text-slate-500">
+              <p className="text-sm leading-relaxed text-slate-500">
                 Pantau riwayat kasus dan status penanganan bimbingan konseling siswa Anda.
               </p>
             </div>

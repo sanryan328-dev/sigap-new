@@ -191,11 +191,11 @@ export default function FormPengajuanIzin({ open, onClose, userId, namaLengkap }
           >
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
               <div>
-                <span className="text-xs font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                <span className="text-sm font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
                   Form Izin
                 </span>
                 <h2 className="text-lg font-bold text-slate-800 mt-1">Pengajuan Berhalangan Hadir</h2>
-                <p className="text-xs text-slate-500 mt-0.5">{namaLengkap}</p>
+                <p className="text-sm text-slate-500 mt-0.5">{namaLengkap}</p>
               </div>
               <button
                 onClick={handleClose}
@@ -209,7 +209,7 @@ export default function FormPengajuanIzin({ open, onClose, userId, namaLengkap }
             <form onSubmit={handleSubmit} className="space-y-5 px-6 py-5">
               {/* Status Izin */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700">Status Izin</label>
+                <label className="text-sm font-semibold text-slate-700">Status Izin</label>
                 <select
                   value={statusIzin}
                   onChange={(e) => setStatusIzin(e.target.value)}
@@ -224,7 +224,7 @@ export default function FormPengajuanIzin({ open, onClose, userId, namaLengkap }
 
               {/* Alasan Detail */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700">
+                <label className="text-sm font-semibold text-slate-700">
                   Alasan Detail <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -240,7 +240,7 @@ export default function FormPengajuanIzin({ open, onClose, userId, namaLengkap }
 
               {/* Upload Foto/Surat Izin */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700">Foto Bukti / Surat Izin</label>
+                <label className="text-sm font-semibold text-slate-700">Foto Bukti / Surat Izin</label>
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
@@ -251,7 +251,7 @@ export default function FormPengajuanIzin({ open, onClose, userId, namaLengkap }
                     <Upload className="size-4" />
                     {file ? 'Ganti File' : 'Pilih File'}
                   </button>
-                  <span className="text-xs text-slate-500">Maks. 5 MB (Gambar/PDF)</span>
+                  <span className="text-sm text-slate-500">Maks. 5 MB (Gambar/PDF)</span>
                 </div>
                 <input
                   ref={fileInputRef}
@@ -268,7 +268,7 @@ export default function FormPengajuanIzin({ open, onClose, userId, namaLengkap }
                       <img src={previewUrl} alt="Preview" className="size-10 rounded object-cover" />
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-slate-700 truncate">{file?.name}</p>
+                      <p className="text-sm font-medium text-slate-700 truncate">{file?.name}</p>
                       <p className="text-[10px] text-slate-400">{((file?.size || 0) / 1024).toFixed(1)} KB</p>
                     </div>
                     <button
@@ -284,7 +284,7 @@ export default function FormPengajuanIzin({ open, onClose, userId, namaLengkap }
 
               {/* Upload Modul Tugas (Attachment Titipan Tugas) */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
                   <Paperclip className="size-3.5" />
                   Berkas Modul Tugas (Attachment)
                 </label>
@@ -298,7 +298,7 @@ export default function FormPengajuanIzin({ open, onClose, userId, namaLengkap }
                     <Upload className="size-4" />
                     {tugasFile ? 'Ganti Berkas' : 'Pilih Berkas'}
                   </button>
-                  <span className="text-xs text-slate-500">Maks. 10 MB (PDF, DOCX, Gambar)</span>
+                  <span className="text-sm text-slate-500">Maks. 10 MB (PDF, DOCX, Gambar)</span>
                 </div>
                 <input
                   ref={tugasFileInputRef}
@@ -315,7 +315,7 @@ export default function FormPengajuanIzin({ open, onClose, userId, namaLengkap }
                       <FileText className="size-8 text-blue-500" />
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-slate-700 truncate">{tugasFile.name}</p>
+                      <p className="text-sm font-medium text-slate-700 truncate">{tugasFile.name}</p>
                       <p className="text-[10px] text-slate-400">{((tugasFile.size || 0) / 1024).toFixed(1)} KB</p>
                     </div>
                     <button
@@ -331,7 +331,7 @@ export default function FormPengajuanIzin({ open, onClose, userId, namaLengkap }
 
               {/* Titipan Tugas Kelas */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700">Titipan Tugas Kelas</label>
+                <label className="text-sm font-semibold text-slate-700">Titipan Tugas Kelas</label>
                 <textarea
                   value={titipanTugas}
                   onChange={(e) => setTitipanTugas(e.target.value)}

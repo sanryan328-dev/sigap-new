@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { supabase } from "./supabaseClient";
 import { addToOfflineQueue } from "./utils/dbLocal";
 import { useAuthStore, selectIsAdmin, selectIsKepsek, selectIsKurikulum, selectIsPiket, selectIsGureBK } from "./store/useAuthStore";
-import type { MapelEntry, UserProfile, RoleView } from "./store/useAuthStore";
+import type { AuthUser, MapelEntry, UserProfile, RoleView } from "./store/useAuthStore";
 import Login from "./components/Login";
 import DashboardMenu from "./components/DashboardMenu";
 import GuruMapelDashboard from "./components/GuruMapelDashboard";
@@ -47,7 +47,7 @@ export default function App() {
   const [kelas, setKelas] = useState("");
   const [mataPelajaran, setMataPelajaran] = useState("");
   const [jamMulai, setJamMulai] = useState("1");
-  const [jamSelesai, setJamSelesai] = useState("3");
+  const [durasiJam, setDurasiJam] = useState("2");
   const [materi, setMateri] = useState("");
   const [catatan, setCatatan] = useState("");
 
@@ -57,6 +57,7 @@ export default function App() {
   const [loadingSiswa, setLoadingSiswa] = useState(false);
   const [loadingSimpan, setLoadingSimpan] = useState(false);
   const [pesanEror, setPesanEror] = useState("");
+  const [sessionChecked, setSessionChecked] = useState(false);
 
   // PWA Install Debug
   useEffect(() => {
@@ -100,6 +101,78 @@ export default function App() {
       window.removeEventListener('offline', onOffline);
     };
   }, [setOnlineStatus]);
+
+  /* ── Restore session dari localStorage ── */
+  useEffect(() => {
+    const raw = localStorage.getItem('sigap_session');
+    if (!raw) {
+      setSessionChecked(true);
+      return;
+    }
+    let stored: { user: AuthUser; profile: UserProfile } | null = null;
+    try {
+      stored = JSON.parse(raw);
+    } catch {
+      localStorage.removeItem('sigap_session');
+      setSessionChecked(true);
+      return;
+    }
+    if (!stored?.user?.id) {
+      localStorage.removeItem('sigap_session');
+      setSessionChecked(true);
+      return;
+    }
+
+    /* Verifikasi user masih ada di database */
+    (async () => {
+      try {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('id, username, role')
+          .eq('id', stored!.user.id)
+          .single();
+        if (!userData) {
+          localStorage.removeItem('sigap_session');
+          setSessionChecked(true);
+          return;
+        }
+
+        let profilTarik: any;
+        const res = await supabase
+          .from('profiles')
+          .select('user_id, nama_lengkap, mapel, mata_pelajaran, is_wali_kelas, kelas_wali, nama_ekstrakurikuler, hari_piket')
+          .eq('user_id', userData.id)
+          .single();
+        if (res.data) {
+          profilTarik = res.data;
+        } else {
+          const fallback = await supabase
+            .from('profiles')
+            .select('user_id, nama_lengkap, mapel, mata_pelajaran, is_wali_kelas, kelas_wali, nama_ekstrakurikuler')
+            .eq('user_id', userData.id)
+            .single();
+          profilTarik = fallback.data;
+        }
+
+        if (!profilTarik) {
+          localStorage.removeItem('sigap_session');
+          setSessionChecked(true);
+          return;
+        }
+
+        const authUser: AuthUser = {
+          id: userData.id,
+          username: userData.username,
+          role: userData.role,
+        };
+        setAuth(authUser, profilTarik as UserProfile);
+      } catch {
+        localStorage.removeItem('sigap_session');
+      } finally {
+        setSessionChecked(true);
+      }
+    })();
+  }, [setAuth]);
 
   useEffect(() => {
     async function fetchKelas() {
@@ -201,7 +274,9 @@ export default function App() {
     setPesanEror("");
     try {
       if (username.toLowerCase() === "admin") {
-        setAuth({ id: 0, username: 'admin', role: 'admin' }, null as unknown as UserProfile);
+        const adminUser = { id: 0, username: 'admin', role: 'admin' } as const;
+        setAuth(adminUser, null as unknown as UserProfile);
+        localStorage.setItem('sigap_session', JSON.stringify({ user: adminUser, profile: null }));
         return;
       }
 
@@ -229,6 +304,9 @@ export default function App() {
 
       const authUser = { id: userData.id, username: userData.username, role: userData.role };
       setAuth(authUser, profilTarik);
+
+      /* Simpan sesi ke localStorage supaya tahan refresh */
+      localStorage.setItem('sigap_session', JSON.stringify({ user: authUser, profile: profilTarik }));
 
       if (userData.role === "kurikulum") {
         setKurikulumPanel(null);
@@ -290,6 +368,7 @@ export default function App() {
 
   const handleLogout = () => {
     logout();
+    localStorage.removeItem('sigap_session');
     setKurikulumPanel(null);
     setUsername("");
     setPassword("");
@@ -300,11 +379,44 @@ export default function App() {
 
   const handleStatusChange = (siswaId: string, status: string) => { setPresensi({ ...presensi, [siswaId]: status }); };
 
+  const [errorJadwal, setErrorJadwal] = useState('');
+
   const handleSubmitJurnal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile || !activeRoleView) return;
-    setLoadingSimpan(true); setPesanEror("");
-    const formatJamKe = `${jamMulai}-${jamSelesai}`;
+    setLoadingSimpan(true); setPesanEror(""); setErrorJadwal('');
+
+    const jamMulaiNum = parseInt(jamMulai);
+    const durasiJamNum = parseInt(durasiJam);
+    const jamSelesaiNum = jamMulaiNum + durasiJamNum - 1;
+    const formatJamKe = `${jamMulai}-${jamSelesaiNum}`;
+
+    /* Validasi bentrok jadwal dari teaching_schedules */
+    try {
+      const todayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+      const hariIni = todayNames[new Date().getDay()];
+      const { data: existingSchedules } = await supabase
+        .from('teaching_schedules')
+        .select('user_id, jam_mulai, durasi_jam, mata_pelajaran')
+        .eq('kelas', kelas)
+        .eq('hari', hariIni);
+
+      if (existingSchedules) {
+        const bentrok = existingSchedules.some((s: any) => {
+          if (s.user_id === profile.user_id) return false; /* skip diri sendiri */
+          const sMulai = s.jam_mulai;
+          const sAkhir = s.jam_mulai + s.durasi_jam - 1;
+          return (jamMulaiNum <= sAkhir) && (jamSelesaiNum >= sMulai);
+        });
+        if (bentrok) {
+          setErrorJadwal(`Kelas ${kelas} sudah diisi guru lain pada hari ${hariIni} di rentang jam yang sama. Silakan periksa jadwal.`);
+          setLoadingSimpan(false);
+          return;
+        }
+      }
+    } catch (scheduleErr: any) {
+      console.error('Gagal validasi jadwal (non-bloking):', scheduleErr.message);
+    }
     if (!navigator.onLine) {
       const payloadJurnal = {
         user_id: profile.user_id, kelas, mata_pelajaran: mataPelajaran, jam_ke: formatJamKe,
@@ -344,15 +456,41 @@ export default function App() {
     if (!profile) return;
     setLoadingSimpan(true); setPesanEror("");
     try {
-      const dataNilaiArray = daftarSiswa.map((siswa) => ({ user_id: profile.user_id, student_id: siswa.id, kelas: kelas, mapel: mataPelajaran, jenis_penilaian: jenisPenilaian, nilai: kumpulanNilai[siswa.id] || 0 }));
+      const dataNilaiArray = Object.entries(kumpulanNilai)
+        .filter(([_, nilai]) => nilai !== undefined && nilai !== null)
+        .map(([studentId, nilai]) => ({
+          user_id: profile.user_id,
+          student_id: Number(studentId),
+          kelas,
+          mapel: mataPelajaran,
+          jenis_penilaian: jenisPenilaian,
+          nilai,
+        }));
+
+      if (dataNilaiArray.length === 0) {
+        toast.error('Minimal isi satu nilai siswa untuk disimpan.');
+        return;
+      }
+
+      /* Hapus data lama untuk (user_id, kelas, mapel, jenis_penilaian) lalu insert ulang */
+      await supabase
+        .from('student_scores')
+        .delete()
+        .eq('user_id', profile.user_id)
+        .eq('kelas', kelas)
+        .eq('mapel', mataPelajaran)
+        .eq('jenis_penilaian', jenisPenilaian);
+
       const { error } = await supabase.from('student_scores').insert(dataNilaiArray);
       if (error) throw error;
+
       toast.success(`Sukses! Rekap nilai ${jenisPenilaian} Kelas ${kelas} berhasil disimpan.`);
       setSubMenu(null);
     } catch (err: any) { toast.error(err.message || "Gagal menyimpan rekap nilai."); } finally { setLoadingSimpan(false); }
   };
 
   const handleBackFromJurnal = () => {
+    setErrorJadwal('');
     if (activeRoleView === "guru_mapel" && isKurikulum) {
       setSubMenu(null);
     } else if (activeRoleView === "guru_mapel") setSubMenu(null);
@@ -360,6 +498,21 @@ export default function App() {
     else if (activeRoleView === "wali_kelas") setSubMenuWali(null);
     else if (activeRoleView === "pembina_ekskul") setActiveRoleView(null);
   };
+
+  if (!sessionChecked) {
+    return (
+      <div
+        style={{ backgroundColor: '#fefaef', color: '#1d1601' }}
+        className="min-h-screen flex flex-col items-center justify-center gap-4"
+      >
+        <div
+          className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin"
+          style={{ borderColor: '#f4aa18', borderTopColor: 'transparent' }}
+        />
+        <p className="text-base font-semibold">Memuat sesi...</p>
+      </div>
+    );
+  }
 
   if (!isLoggedIn) return <Login username={username} setUsername={setUsername} password={password} setPassword={setPassword} handleLogin={handleLogin} pesanEror={pesanEror} />;
   if (isAdmin) return <AdminPortal handleLogout={handleLogout} daftarKelas={daftarKelas} />;
@@ -415,7 +568,7 @@ export default function App() {
     if (activeRoleView === 'guru_mapel') {
       if (subMenu === null) return <GuruMapelDashboard setSubMenu={setSubMenu} setCurrentRole={backToSwitcher} onSelectMapelKelas={handleSelectMapelKelas} mataPelajaranData={guruMapelList} daftarKelas={daftarKelas} onSwitchRole={backToSwitcher} />;
       if (subMenu === 'nilai') return <InputNilai setSubMenu={setSubMenu} kelas={kelas} setKelas={setKelas} mataPelajaran={mataPelajaran} daftarKelas={daftarKelas} daftarSiswa={daftarSiswa} handleSimpanNilai={handleSimpanNilai} loadingSiswa={loadingSiswa} loadingSimpan={loadingSimpan} />;
-      return <FormJurnal currentRole={activeRoleView} setSubMenu={handleBackFromJurnal} kelas={kelas} setKelas={setKelas} mataPelajaran={mataPelajaran} setMataPelajaran={setMataPelajaran} jamMulai={jamMulai} setJamMulai={setJamMulai} jamSelesai={jamSelesai} setJamSelesai={setJamSelesai} materi={materi} setMateri={setMateri} catatan={catatan} setCatatan={setCatatan} daftarKelas={daftarKelas} daftarSiswa={daftarSiswa} presensi={presensi} handleStatusChange={handleStatusChange} handleSubmitJurnal={handleSubmitJurnal} loadingSiswa={loadingSiswa} loadingSimpan={loadingSimpan} />;
+      return <FormJurnal currentRole={activeRoleView} setSubMenu={handleBackFromJurnal} kelas={kelas} setKelas={setKelas} mataPelajaran={mataPelajaran} setMataPelajaran={setMataPelajaran} jamMulai={jamMulai} setJamMulai={setJamMulai} durasiJam={durasiJam} setDurasiJam={setDurasiJam} materi={materi} setMateri={setMateri} catatan={catatan} setCatatan={setCatatan} daftarKelas={daftarKelas} daftarSiswa={daftarSiswa} presensi={presensi} handleStatusChange={handleStatusChange} handleSubmitJurnal={handleSubmitJurnal} loadingSiswa={loadingSiswa} loadingSimpan={loadingSimpan} errorJadwal={errorJadwal} />;
     }
   }
   
@@ -460,6 +613,6 @@ export default function App() {
   }
 
   return (
-    <FormJurnal currentRole={activeRoleView} setSubMenu={handleBackFromJurnal} kelas={kelas} setKelas={setKelas} mataPelajaran={mataPelajaran} setMataPelajaran={setMataPelajaran} jamMulai={jamMulai} setJamMulai={setJamMulai} jamSelesai={jamSelesai} setJamSelesai={setJamSelesai} materi={materi} setMateri={setMateri} catatan={catatan} setCatatan={setCatatan} daftarKelas={daftarKelas} daftarSiswa={daftarSiswa} presensi={presensi} handleStatusChange={handleStatusChange} handleSubmitJurnal={handleSubmitJurnal} loadingSiswa={loadingSiswa} loadingSimpan={loadingSimpan} />
+    <FormJurnal currentRole={activeRoleView} setSubMenu={handleBackFromJurnal} kelas={kelas} setKelas={setKelas} mataPelajaran={mataPelajaran} setMataPelajaran={setMataPelajaran} jamMulai={jamMulai} setJamMulai={setJamMulai} durasiJam={durasiJam} setDurasiJam={setDurasiJam} materi={materi} setMateri={setMateri} catatan={catatan} setCatatan={setCatatan} daftarKelas={daftarKelas} daftarSiswa={daftarSiswa} presensi={presensi} handleStatusChange={handleStatusChange} handleSubmitJurnal={handleSubmitJurnal} loadingSiswa={loadingSiswa} loadingSimpan={loadingSimpan} errorJadwal={errorJadwal} />
   );
 }

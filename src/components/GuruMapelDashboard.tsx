@@ -97,7 +97,7 @@ export default function GuruMapelDashboard({
               {/* Dropdown Mapel */}
               <div className="form-control w-full">
                 <label className="label py-1">
-                  <span className="label-text text-xs font-semibold">Mata Pelajaran</span>
+                  <span className="label-text text-sm font-semibold">Mata Pelajaran</span>
                 </label>
                 <div className="relative">
                   <select
@@ -122,7 +122,7 @@ export default function GuruMapelDashboard({
               {/* Dropdown Kelas */}
               <div className="form-control w-full">
                 <label className="label py-1">
-                  <span className="label-text text-xs font-semibold">Kelas</span>
+                  <span className="label-text text-sm font-semibold">Kelas</span>
                 </label>
                 <div className="relative">
                   <select
@@ -142,7 +142,7 @@ export default function GuruMapelDashboard({
             </div>
 
             {selectedMapel && kelasOptions.length === 0 && (
-              <p className="text-xs text-amber-600">
+              <p className="text-sm text-amber-600">
                 Tidak ada kelas yang terdaftar untuk mapel {selectedMapel}. Silakan hubungi admin.
               </p>
             )}
@@ -162,7 +162,7 @@ export default function GuruMapelDashboard({
                   <BookOpen className="size-5" />
                 </div>
                 <h3 className="card-title text-sm text-slate-900">Isi Jurnal & Presensi</h3>
-                <p className="text-xs leading-relaxed text-slate-500">
+                <p className="text-sm leading-relaxed text-slate-500">
                   Input materi harian kelas {selectedKelas} dan cek kehadiran siswa.
                 </p>
               </div>
@@ -178,7 +178,7 @@ export default function GuruMapelDashboard({
                   <ClipboardCheck className="size-5" />
                 </div>
                 <h3 className="card-title text-sm text-slate-900">Input Nilai Siswa</h3>
-                <p className="text-xs leading-relaxed text-slate-500">
+                <p className="text-sm leading-relaxed text-slate-500">
                   Rekap angka nilai berkala seperti Tugas, Ulangan Harian, UTS, dan UAS.
                 </p>
               </div>

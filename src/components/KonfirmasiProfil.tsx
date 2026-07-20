@@ -87,7 +87,7 @@ export default function KonfirmasiProfil({
             <h2 className="mt-0.5 text-xl font-extrabold text-slate-900 sm:text-2xl">
               Halo, {namaLengkap}!
             </h2>
-            <p className="text-xs leading-relaxed text-slate-500">
+            <p className="text-sm leading-relaxed text-slate-500">
               Silakan tentukan tugas / amanah yang Anda emban di SMPN 1 Wanayasa tahun ini.
             </p>
           </div>

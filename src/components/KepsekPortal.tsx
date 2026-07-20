@@ -96,7 +96,7 @@ function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-xl border border-slate-200 bg-white/95 px-4 py-3 shadow-xl backdrop-blur-sm">
-      <p className="mb-1.5 text-xs font-bold text-slate-700">{label}</p>
+      <p className="mb-1.5 text-sm font-bold text-slate-700">{label}</p>
       {payload.map((entry: any) => (
         <div key={entry.name} className="flex items-center gap-2 text-[11px]">
           <span className="inline-block size-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
@@ -157,41 +157,45 @@ export default function KepsekPortal({ onSwitchRole }: Props) {
     let cancelled = false;
     const fetchData = async () => {
       setLoading(true);
-      const today = new Date().toISOString().split('T')[0];
+      const localDate = new Date();
+      const year = localDate.getFullYear();
+      const month = String(localDate.getMonth() + 1).padStart(2, '0');
+      const day = String(localDate.getDate()).padStart(2, '0');
+      const todayString = `${year}-${month}-${day}`;
+      const startOfDay = `${todayString}T00:00:00.000Z`;
+      const endOfDay = `${todayString}T23:59:59.999Z`;
 
       try {
+        /* ─── Step 1: Ambil jurnal hari ini ─── */
+        const { data: journals, error: errJ } = await supabase
+          .from('teaching_journals')
+          .select('id, user_id, kelas, mata_pelajaran, jam_ke, materi_pembelajaran, created_at')
+          .gte('created_at', startOfDay)
+          .lte('created_at', endOfDay)
+          .order('created_at', { ascending: false });
+
+        /* ─── Step 2: Ambil profiles & students ─── */
         const [
-          { data: journals, error: errJ },
-          { data: attendances, error: errA },
           { data: absences, error: errAbs },
           { data: profiles, error: errP },
           { data: students, error: errS },
         ] = await Promise.all([
           supabase
-            .from('teaching_journals')
-            .select('user_id, kelas, mata_pelajaran, jam_ke, materi_pembelajaran, created_at')
-            .gte('created_at', today)
-            .order('created_at', { ascending: false }),
-          supabase
-            .from('student_attendances')
-            .select('student_id, status, created_at')
-            .gte('created_at', today),
-          supabase
             .from('teacher_absences')
             .select('user_id, status_izin, alasan_detail, titipan_tugas_kelas')
-            .eq('tanggal_absen', today)
+            .eq('tanggal_absen', todayString)
             .eq('status_verifikasi', 'diverifikasi_piket'),
           supabase
             .from('profiles')
-            .select('user_id, nama_lengkap'),
+            .select('user_id, nama_lengkap, is_wali_kelas, kelas_wali'),
           supabase
             .from('students')
             .select('id, kelas'),
         ]);
 
         if (cancelled) return;
-        if (errJ || errA || errAbs || errP || errS) {
-          console.error('KepsekPortal fetch error:', { errJ, errA, errAbs, errP, errS });
+        if (errJ || errAbs || errP || errS) {
+          console.error('KepsekPortal fetch error:', { errJ, errAbs, errP, errS });
           setLoading(false);
           return;
         }
@@ -199,14 +203,48 @@ export default function KepsekPortal({ onSwitchRole }: Props) {
         /* ─── Build Maps ─── */
 
         const guruMap: GuruMap = {};
+        const profileMap: Record<number, { is_wali_kelas: boolean; kelas_wali: string | null }> = {};
         (profiles ?? []).forEach((p: any) => {
           if (p.user_id && p.nama_lengkap) guruMap[Number(p.user_id)] = p.nama_lengkap;
+          if (p.user_id) profileMap[Number(p.user_id)] = { is_wali_kelas: !!p.is_wali_kelas, kelas_wali: p.kelas_wali ?? null };
         });
 
         const kelasMap: Record<number, string> = {};
         (students ?? []).forEach((s: any) => {
           if (s.id && s.kelas) kelasMap[Number(s.id)] = s.kelas;
         });
+
+        /* ─── Step 3: Filter jurnal valid (jam-1 / wali kelas) & kumpulkan ID ─── */
+
+        const validJournalIds: number[] = [];
+        (journals ?? []).forEach((j: any) => {
+          const jamKe = String(j.jam_ke ?? '');
+          const isJamPertama = jamKe.includes('1');
+          const jUser = Number(j.user_id);
+          const profile = profileMap[jUser];
+          const isWaliKelas = !!(profile?.is_wali_kelas && profile.kelas_wali === j.kelas);
+          if (isJamPertama || isWaliKelas) {
+            validJournalIds.push(Number(j.id));
+          }
+        });
+
+        /* ─── Step 4: Ambil absensi hanya dari jurnal valid ─── */
+        let queryAbsen = supabase
+          .from('student_attendances')
+          .select('student_id, status, teaching_journal_id');
+        if (validJournalIds.length > 0) {
+          queryAbsen = queryAbsen.in('teaching_journal_id', validJournalIds);
+        } else {
+          /* force empty if no valid journal */
+          queryAbsen = queryAbsen.in('teaching_journal_id', [0]);
+        }
+        const { data: attendances, error: errA } = await queryAbsen;
+
+        if (errA) {
+          console.error('KepsekPortal attendances error:', errA);
+          setLoading(false);
+          return;
+        }
 
         /* ─── Stats ─── */
 
@@ -388,7 +426,7 @@ export default function KepsekPortal({ onSwitchRole }: Props) {
                 <button
                   key={key}
                   onClick={() => setTab(key)}
-                  className={`tab tab-sm flex-1 rounded-lg text-xs font-medium transition-all sm:flex-none sm:px-5 ${
+                  className={`tab tab-sm flex-1 rounded-lg text-sm font-medium transition-all sm:flex-none sm:px-5 ${
                     tab === key
                       ? 'tab-active bg-primary text-white shadow-sm'
                       : 'text-slate-500 hover:text-slate-700'
@@ -426,7 +464,7 @@ export default function KepsekPortal({ onSwitchRole }: Props) {
                           <th className="px-4 py-3">Ringkasan Materi</th>
                         </tr>
                       </thead>
-                      <tbody className="text-xs">
+                      <tbody className="text-sm">
                         {dataJurnal.map((row, i) => (
                           <tr key={`${row.user_id}-${i}`} className="hover:bg-slate-50">
                             <td className="px-4 py-2.5 font-medium text-slate-800">{row.nama_guru}</td>
@@ -509,7 +547,7 @@ export default function KepsekPortal({ onSwitchRole }: Props) {
                     <h3 className="text-sm font-bold text-slate-800">Rekapitulasi per Kelas</h3>
                   </div>
                   {chartData.length === 0 ? (
-                    <div className="py-8 text-center text-xs text-slate-400">Tidak ada data</div>
+                    <div className="py-8 text-center text-sm text-slate-400">Tidak ada data</div>
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="table table-sm w-full">
@@ -523,7 +561,7 @@ export default function KepsekPortal({ onSwitchRole }: Props) {
                             <th className="px-4 py-3">Total</th>
                           </tr>
                         </thead>
-                        <tbody className="text-xs">
+                        <tbody className="text-sm">
                           {chartData.map((r) => (
                             <tr key={r.kelas} className="hover:bg-slate-50">
                               <td className="px-4 py-2.5 font-medium text-slate-800">{r.kelas}</td>
@@ -571,7 +609,7 @@ export default function KepsekPortal({ onSwitchRole }: Props) {
                             <th className="px-4 py-3">Titipan Tugas Kelas</th>
                           </tr>
                         </thead>
-                        <tbody className="text-xs">
+                        <tbody className="text-sm">
                           {dataGuruIzin.map((row, i) => (
                             <tr key={i} className="hover:bg-slate-50">
                               <td className="px-4 py-2.5 font-medium text-slate-800">{row.nama_guru}</td>

@@ -41,8 +41,12 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
   const [radarGuruIzin, setRadarGuruIzin] = useState<any[]>([]);
   const [radarGuruKosong, setRadarGuruKosong] = useState<any[]>([]);
 
+  // State Notifikasi BK
+  const [bkNotifications, setBkNotifications] = useState<any[]>([]);
+
   useEffect(() => {
     fetchDataMaster();
+    fetchBkNotification();
   }, []);
 
   useEffect(() => {
@@ -63,6 +67,23 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
 
     const { data: students } = await supabase.from('students').select('id, nama_siswa, kelas');
     if (students) setListStudents(students);
+  };
+
+  // ==========================================
+  // 🚨 NOTIFIKASI GURU BK (SEDANG MENANGANI KASUS)
+  // ==========================================
+  const fetchBkNotification = async () => {
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const { data } = await supabase
+        .from('teacher_absences')
+        .select('*, profiles(nama_lengkap)')
+        .eq('tanggal_absen', todayStr)
+        .ilike('alasan_detail', 'NOTIFIKASI: Sedang Menangani Kasus%');
+      setBkNotifications(data || []);
+    } catch (err) {
+      console.error('Gagal memuat notifikasi BK:', err);
+    }
   };
 
   // ==========================================
@@ -221,11 +242,11 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl bg-white px-6 py-4 shadow-sm border border-slate-100">
             <div>
-              <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
+              <span className="text-sm font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
                 Meja Piket
               </span>
               <h2 className="text-lg font-bold text-slate-800 mt-1">Persetujuan Izin Guru Hari Ini</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-sm text-slate-500 mt-0.5">
                 <span className="font-semibold text-amber-600">{antreanACC}</span> pengajuan pending &mdash; verifikasi segera
               </p>
             </div>
@@ -272,7 +293,7 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
                     const namaGuru = absen.profiles?.nama_lengkap || 'Guru Tidak Ditemukan';
                     return (
                       <tr key={absen.id} className="hover:bg-slate-50/50">
-                        <td className="font-mono text-xs text-slate-500">{absen.tanggal_absen}</td>
+                        <td className="font-mono text-sm text-slate-500">{absen.tanggal_absen}</td>
                         <td className="font-semibold text-slate-900 text-sm">{namaGuru}</td>
                         <td>
                           <span className="badge badge-soft badge-info badge-sm">
@@ -280,7 +301,7 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
                           </span>
                         </td>
                         <td className="max-w-xs">
-                          <div className="text-xs text-slate-700 line-clamp-2">{absen.alasan_detail}</div>
+                          <div className="text-sm text-slate-700 line-clamp-2">{absen.alasan_detail}</div>
                           {absen.titipan_tugas_kelas && (
                             <div className="text-[10px] text-blue-600 mt-0.5 italic truncate">
                               Tugas: {absen.titipan_tugas_kelas}
@@ -425,12 +446,12 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
         <div className="w-full max-w-5xl bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-4">
           <div className="flex justify-between items-center border-b border-slate-100 pb-4">
             <div>
-              <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
+              <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
                 Live Monitoring
               </span>
               <h2 className="text-lg font-bold text-slate-800 mt-1">Radar Kehadiran Harian</h2>
             </div>
-            <button onClick={() => setSubMenuPiket(null)} className="text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg font-medium cursor-pointer">
+            <button onClick={() => setSubMenuPiket(null)} className="text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg font-medium cursor-pointer">
               ⬅️ Kembali
             </button>
           </div>
@@ -443,10 +464,10 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
               {/* KOLOM KIRI: SISWA TIDAK HADIR */}
               <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
                 <div className="bg-slate-50 p-3 border-b border-slate-200 flex justify-between items-center">
-                  <h3 className="text-xs font-bold text-slate-800">📉 Siswa Tidak Hadir (Dari Jam Pertama)</h3>
+                  <h3 className="text-sm font-bold text-slate-800">📉 Siswa Tidak Hadir (Dari Jam Pertama)</h3>
                   <span className="text-[10px] font-bold bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">{radarSiswaAbsen.length} Anak</span>
                 </div>
-                <table className="w-full text-left text-xs border-collapse">
+                <table className="w-full text-left text-sm border-collapse">
                   <thead className="bg-slate-50 border-b border-slate-100 text-slate-500">
                     <tr><th className="p-3">Kelas</th><th className="p-3">Nama Siswa</th><th className="p-3 text-center">Status</th></tr>
                   </thead>
@@ -477,10 +498,10 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
                 {/* Guru Izin (Kuning) */}
                 <div className="bg-white border border-amber-200 rounded-xl overflow-hidden shadow-xs">
                   <div className="bg-amber-50 p-3 border-b border-amber-200 flex justify-between items-center">
-                    <h3 className="text-xs font-bold text-amber-900">🟨 Pendidik Izin / Halangan Hari Ini</h3>
+                    <h3 className="text-sm font-bold text-amber-900">🟨 Pendidik Izin / Halangan Hari Ini</h3>
                     <span className="text-[10px] font-bold bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full">{radarGuruIzin.length} Guru</span>
                   </div>
-                  <ul className="divide-y divide-amber-100/50 text-xs">
+                  <ul className="divide-y divide-amber-100/50 text-sm">
                     {radarGuruIzin.length === 0 ? (
                       <li className="p-4 text-center text-amber-600/70 italic">Tidak ada guru yang izin hari ini.</li>
                     ) : (
@@ -501,10 +522,10 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
                 {/* Guru Kosong/Warning (Merah) */}
                 <div className="bg-white border border-red-200 rounded-xl overflow-hidden shadow-xs">
                   <div className="bg-red-50 p-3 border-b border-red-200 flex justify-between items-center">
-                    <h3 className="text-xs font-bold text-red-900">🟥 Indikasi Kelas Kosong (Belum Absen/Jurnal)</h3>
+                    <h3 className="text-sm font-bold text-red-900">🟥 Indikasi Kelas Kosong (Belum Absen/Jurnal)</h3>
                     <span className="text-[10px] font-bold bg-red-200 text-red-800 px-2 py-0.5 rounded-full">{radarGuruKosong.length} Guru</span>
                   </div>
-                  <ul className="divide-y divide-red-100/50 text-xs max-h-60 overflow-y-auto">
+                  <ul className="divide-y divide-red-100/50 text-sm max-h-60 overflow-y-auto">
                     {radarGuruKosong.length === 0 ? (
                       <li className="p-4 text-center text-red-500/70 italic">Aman. Semua guru terdeteksi sudah mengisi jurnal atau izin.</li>
                     ) : (
@@ -572,7 +593,7 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
                         <Legend
                           iconType="circle"
                           formatter={(value) => (
-                            <span className="text-xs text-base-content/70">{value}</span>
+                            <span className="text-sm text-base-content/70">{value}</span>
                           )}
                         />
                       </PieChart>
@@ -598,7 +619,7 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
                         <Legend
                           iconType="rect"
                           formatter={(value) => (
-                            <span className="text-xs text-base-content/70">{value}</span>
+                            <span className="text-sm text-base-content/70">{value}</span>
                           )}
                         />
                         <Bar dataKey="Sakit" stackId="a" fill="#F59E0B" radius={[2, 2, 0, 0]} />
@@ -631,7 +652,7 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
         <div className="w-full max-w-lg space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
+              <span className="text-sm font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
                 Panel Kendali Guru Piket
               </span>
               <h2 className="text-xl font-bold text-slate-800 mt-1.5">{profile?.nama_lengkap}</h2>
@@ -658,7 +679,7 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
             <Lock className="size-6 shrink-0" />
             <div>
               <h3 className="font-bold text-sm">Akses Ditolak</h3>
-              <div className="text-xs leading-relaxed">
+              <div className="text-sm leading-relaxed">
                 Panel verifikasi hanya dapat dibuka pada hari jadwal piket Anda.
               </div>
             </div>
@@ -675,7 +696,7 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
                 <Calendar className="size-8 text-amber-500" />
               </div>
               <h3 className="card-title text-sm text-slate-800">Hari ini: {todayName}</h3>
-              <p className="text-xs text-slate-500 max-w-sm">
+              <p className="text-sm text-slate-500 max-w-sm">
                 Jadwal piket Anda: <strong className="text-slate-700">{picketDay || '—'}</strong>.
                 {picketDay ? ` Panel verifikasi hanya aktif setiap hari ${picketDay}.` : ' Hubungi admin untuk pengaturan jadwal piket.'}
               </p>
@@ -692,11 +713,11 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
         
         <div className="flex justify-between items-start border-b border-slate-100 pb-5 mb-6">
           <div>
-            <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
+            <span className="text-sm font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
               Panel Kendali Guru Piket
             </span>
             <h2 className="text-xl font-bold text-slate-800 mt-1.5">{profile?.nama_lengkap}</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-sm text-slate-500 mt-0.5">
               Antrean Verifikasi Izin: <strong className="text-amber-600">{antreanACC} Pengajuan</strong>
             </p>
           </div>
@@ -713,6 +734,19 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
             </button>
           </div>
         </div>
+
+        {bkNotifications.length > 0 && bkNotifications.map((notif: any) => (
+          <div key={notif.id} className="alert alert-soft alert-warning mb-4 rounded-xl shadow-sm text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-base">⚠️</span>
+              <div>
+                <strong>Guru BK {notif.profiles?.nama_lengkap || '—'}</strong> Saat Ini Sedang Menangani Kasus
+                <br />
+                <span className="text-slate-500">{notif.alasan_detail}</span>
+              </div>
+            </div>
+          </div>
+        ))}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button onClick={() => setSubMenuPiket('validasi_absen')} className="flex flex-col items-start p-5 bg-white border border-slate-200 rounded-xl hover:border-blue-500 hover:shadow-md transition-all text-left group cursor-pointer">

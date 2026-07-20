@@ -202,7 +202,7 @@ export default function KehadiranWali({ setSubMenuWali, kelas, daftarSiswa }: Ke
             </h2>
           </div>
           <div className="flex-none gap-2">
-            <span className="text-xs font-semibold text-slate-600">
+            <span className="text-sm font-semibold text-slate-600">
               Kelas: <span className="text-emerald-700">{kelas}</span>
             </span>
             <button onClick={() => setSubMenuWali(null)} className="btn btn-ghost btn-sm">
@@ -222,7 +222,7 @@ export default function KehadiranWali({ setSubMenuWali, kelas, daftarSiswa }: Ke
             <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
               <Info className="size-4" />
             </div>
-            <div className="text-xs leading-relaxed text-emerald-800">
+            <div className="text-sm leading-relaxed text-emerald-800">
               <p className="font-semibold">
                 Tersinkronisasi otomatis dari jam ke-{syncInfo.jamKe} ({syncInfo.mapel})
               </p>
@@ -259,7 +259,7 @@ export default function KehadiranWali({ setSubMenuWali, kelas, daftarSiswa }: Ke
                   </tr>
                 ) : daftarSiswa.length === 0 ? (
                   <tr>
-                    <td colSpan={2} className="px-5 py-12 text-center text-xs text-slate-400">
+                    <td colSpan={2} className="px-5 py-12 text-center text-sm text-slate-400">
                       Belum ada siswa di kelas ini.
                     </td>
                   </tr>

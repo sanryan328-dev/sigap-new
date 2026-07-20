@@ -27,7 +27,7 @@ function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-xl border border-slate-200 bg-white/95 px-4 py-3 shadow-xl backdrop-blur-sm">
-      <p className="mb-1 text-xs font-bold text-slate-700">{label}</p>
+      <p className="mb-1 text-sm font-bold text-slate-700">{label}</p>
       {payload.map((entry: any) => (
         <div key={entry.name} className="flex items-center gap-2 text-[11px]">
           <span className="inline-block size-2.5 rounded-full" style={{ backgroundColor: entry.color }} />

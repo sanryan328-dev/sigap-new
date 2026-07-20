@@ -194,7 +194,7 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
 
               <form onSubmit={handleSubmitJurnalEkskul} className="space-y-4">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700">Topik / Materi Latihan</label>
+                  <label className="mb-1 block text-sm font-semibold text-slate-700">Topik / Materi Latihan</label>
                   <input
                     type="text"
                     value={topik}
@@ -205,7 +205,7 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700">Catatan Tambahan</label>
+                  <label className="mb-1 block text-sm font-semibold text-slate-700">Catatan Tambahan</label>
                   <textarea
                     value={catatan}
                     onChange={(e) => setCatatan(e.target.value)}
@@ -215,17 +215,17 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
                 </div>
 
                 <div className="border-t border-slate-100 pt-4">
-                  <h4 className="mb-3 text-xs font-bold text-slate-700">
+                  <h4 className="mb-3 text-sm font-bold text-slate-700">
                     Lembar Absensi Anggota ({anggotaEkskul.length} Siswa)
                   </h4>
                   {anggotaEkskul.length === 0 ? (
-                    <p className="py-6 text-center text-xs text-slate-400">
+                    <p className="py-6 text-center text-sm text-slate-400">
                       Belum ada anggota. Tambahkan anggota terlebih dahulu.
                     </p>
                   ) : (
                     <div className="max-h-72 divide-y overflow-y-auto rounded-box border">
                       {anggotaEkskul.map((item) => (
-                        <div key={item.id} className="flex items-center justify-between p-3 text-xs hover:bg-slate-50">
+                        <div key={item.id} className="flex items-center justify-between p-3 text-sm hover:bg-slate-50">
                           <div>
                             <p className="font-semibold text-slate-800">{item.students?.nama_siswa}</p>
                             <p className="text-[10px] text-slate-500">Kelas {item.students?.kelas}</p>
@@ -294,7 +294,7 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
               <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
                 <div className="card border border-slate-200 bg-slate-50">
                   <div className="card-body gap-3">
-                    <h4 className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                    <h4 className="flex items-center gap-2 text-sm font-bold text-slate-700">
                       <Plus className="size-3.5" />
                       Tambah Anggota Baru
                     </h4>
@@ -336,7 +336,7 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
                     </thead>
                     <tbody>
                       {anggotaEkskul.length === 0 ? (
-                        <tr><td colSpan={4} className="py-8 text-center text-xs text-slate-400">Belum ada anggota.</td></tr>
+                        <tr><td colSpan={4} className="py-8 text-center text-sm text-slate-400">Belum ada anggota.</td></tr>
                       ) : (
                         anggotaEkskul.map((item) => (
                           <tr key={item.id} className="hover">
@@ -385,7 +385,7 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
             <h2 className="mt-0.5 text-xl font-extrabold text-slate-900 sm:text-2xl">
               {profile.nama_ekstrakurikuler}
             </h2>
-            <p className="text-xs font-medium text-slate-500">{profile.nama_lengkap}</p>
+            <p className="text-sm font-medium text-slate-500">{profile.nama_lengkap}</p>
           </div>
           <div className="flex-none gap-2">
             {onSwitchRole && (
@@ -412,7 +412,7 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
                 <BookOpen className="size-5" />
               </div>
               <h4 className="card-title text-sm text-slate-900">Jurnal & Absen</h4>
-              <p className="text-xs leading-relaxed text-slate-500">
+              <p className="text-sm leading-relaxed text-slate-500">
                 Catat topik latihan dan presensi anggota ekskul.
               </p>
             </div>
@@ -428,7 +428,7 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
                 <Users className="size-5" />
               </div>
               <h4 className="card-title text-sm text-slate-900">Anggota Ekskul</h4>
-              <p className="text-xs leading-relaxed text-slate-500">
+              <p className="text-sm leading-relaxed text-slate-500">
                 Kelola daftar anggota dan tambah siswa baru.
               </p>
             </div>
@@ -444,7 +444,7 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
                 <Trophy className="size-5" />
               </div>
               <h4 className="card-title text-sm text-slate-900">Penilaian</h4>
-              <p className="text-xs leading-relaxed text-slate-500">
+              <p className="text-sm leading-relaxed text-slate-500">
                 Input nilai kualitatif dan deskripsi capaian siswa.
               </p>
             </div>
@@ -460,7 +460,7 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
                 <BarChart3 className="size-5" />
               </div>
               <h4 className="card-title text-sm text-slate-900">Analitik Ekskul</h4>
-              <p className="text-xs leading-relaxed text-slate-500">
+              <p className="text-sm leading-relaxed text-slate-500">
                 Grafik tren kehadiran, sebaran anggota, dan capaian nilai.
               </p>
             </div>

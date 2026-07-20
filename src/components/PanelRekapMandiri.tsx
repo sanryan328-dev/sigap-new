@@ -35,10 +35,10 @@ export default function PanelRekapMandiri({ profile, currentRole }: { profile: a
     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mt-6">
       <h3 className="font-bold text-slate-800 mb-4">📂 Unduh Rekap Mandiri</h3>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <button onClick={() => downloadData('jurnal')} className="p-3 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-100">Jurnal Mengajar</button>
-        <button onClick={() => downloadData('nilai')} className="p-3 bg-green-50 text-green-700 rounded-lg text-xs font-bold hover:bg-green-100">Rekap Nilai</button>
+        <button onClick={() => downloadData('jurnal')} className="p-3 bg-blue-50 text-blue-700 rounded-lg text-sm font-bold hover:bg-blue-100">Jurnal Mengajar</button>
+        <button onClick={() => downloadData('nilai')} className="p-3 bg-green-50 text-green-700 rounded-lg text-sm font-bold hover:bg-green-100">Rekap Nilai</button>
         {currentRole === 'wali_kelas' && (
-          <button onClick={() => downloadData('kehadiran')} className="p-3 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold hover:bg-amber-100">Absensi Kelas</button>
+          <button onClick={() => downloadData('kehadiran')} className="p-3 bg-amber-50 text-amber-700 rounded-lg text-sm font-bold hover:bg-amber-100">Absensi Kelas</button>
         )}
       </div>
     </div>

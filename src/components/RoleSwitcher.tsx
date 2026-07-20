@@ -107,7 +107,7 @@ export default function RoleSwitcher({ onSelect, onLogout }: RoleSwitcherProps) 
           <h1 className="text-2xl font-extrabold text-slate-900 sm:text-3xl">
             {profile?.nama_lengkap}
           </h1>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-sm text-slate-500">
             {subMenu === 'guru'
               ? 'Pilih portal yang ingin Anda buka untuk memulai tugas.'
               : 'Anda memiliki akses lebih dari satu peran.'}
@@ -137,7 +137,7 @@ export default function RoleSwitcher({ onSelect, onLogout }: RoleSwitcherProps) 
                   </div>
                   <div>
                     <h3 className="card-title text-sm text-slate-900">Portal Manajemen Kurikulum</h3>
-                    <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                    <p className="mt-1 text-sm leading-relaxed text-slate-500">
                       Pantau jurnal mengajar global, absensi guru, dan tugas tendik di seluruh kelas.
                     </p>
                   </div>
@@ -156,7 +156,7 @@ export default function RoleSwitcher({ onSelect, onLogout }: RoleSwitcherProps) 
                   </div>
                   <div>
                     <h3 className="card-title text-sm text-slate-900">Portal Guru &amp; Tugas Tambahan</h3>
-                    <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                    <p className="mt-1 text-sm leading-relaxed text-slate-500">
                       {portals.length} portal tersedia — akses tugas mengajar dan tambahan Anda.
                     </p>
                   </div>
@@ -208,7 +208,7 @@ export default function RoleSwitcher({ onSelect, onLogout }: RoleSwitcherProps) 
                           <Icon className="size-5" />
                         </div>
                         <div>
-                          <h4 className="card-title text-xs text-slate-900">{p.label}</h4>
+                          <h4 className="card-title text-sm text-slate-900">{p.label}</h4>
                           <p className="mt-0.5 text-[10px] leading-relaxed text-slate-500">
                             {p.desc}
                           </p>

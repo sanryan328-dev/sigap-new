@@ -44,7 +44,7 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
   const isPiket = useAuthStore(selectIsPiket);
   const isGureBK = useAuthStore(selectIsGureBK);
   const [loadingDownload, setLoadingDownload] = useState(false);
-  const [modalJenis, setModalJenis] = useState<'nilai' | 'jurnal' | 'bk' | null>(null);
+  const [modalJenis, setModalJenis] = useState<'nilai' | 'jurnal' | 'bk' | 'agenda' | null>(null);
   const [showFormIzin, setShowFormIzin] = useState(false);
   const { pendingCount, syncing, syncNow } = useOfflineSync();
 
@@ -178,16 +178,24 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
     if (!profile) return;
     setLoadingDownload(true);
 
-    const filterBulan = (tglStr: string) => {
-      if (!filters?.bulan) return true;
-      const d = new Date(tglStr);
-      const bulanAngka = d.getMonth(); // 0-11
-      const namaBulan = [
-        'Januari','Februari','Maret','April','Mei','Juni',
-        'Juli','Agustus','September','Oktober','November','Desember',
-      ][bulanAngka];
-      return namaBulan === filters.bulan;
+    const monthMapping: { [key: string]: string } = {
+      'Januari': '01', 'Februari': '02', 'Maret': '03', 'April': '04',
+      'Mei': '05', 'Juni': '06', 'Juli': '07', 'Agustus': '08',
+      'September': '09', 'Oktober': '10', 'November': '11', 'Desember': '12',
     };
+
+    const buildDateRange = (bulan: string | undefined) => {
+      if (!bulan) return { gte: undefined, lte: undefined };
+      const monthNum = monthMapping[bulan];
+      if (!monthNum) return { gte: undefined, lte: undefined };
+      const year = new Date().getFullYear();
+      const startOfMonth = `${year}-${monthNum}-01T00:00:00.000Z`;
+      const lastDay = new Date(year, parseInt(monthNum), 0).getDate();
+      const endOfMonth = `${year}-${monthNum}-${lastDay}T23:59:59.999Z`;
+      return { gte: startOfMonth, lte: endOfMonth };
+    };
+
+    const range = buildDateRange(filters?.bulan);
 
     try {
       let dataToExport: any[] = [];
@@ -197,12 +205,11 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
         let queryJurnal = supabase.from('teaching_journals').select('*').eq('user_id', profile.user_id);
         if (filters?.mapel) queryJurnal = queryJurnal.eq('mata_pelajaran', filters.mapel);
         if (filters?.kelas) queryJurnal = queryJurnal.eq('kelas', filters.kelas);
+        if (range.gte) queryJurnal = queryJurnal.gte('created_at', range.gte).lte('created_at', range.lte);
         const { data, error } = await queryJurnal.order('created_at', { ascending: false });
         if (error) throw error;
-        dataToExport = data
-          .filter((d: any) => filterBulan(d.created_at))
-          .map((d: any) => ({
-          'Tanggal': new Date(d.created_at).toLocaleDateString('id-ID'),
+        dataToExport = (data ?? []).map((d: any) => ({
+          'Tanggal': d.created_at ? new Date(d.created_at).toLocaleDateString('id-ID') : '-',
           'Kelas': d.kelas,
           'Mata Pelajaran': d.mata_pelajaran,
           'Jam Ke': d.jam_ke,
@@ -211,27 +218,34 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
         }));
 
       } else if (jenis === 'nilai') {
-        const { data, error } = await supabase.from('student_scores').select('*').eq('user_id', profile.user_id).order('created_at', { ascending: false });
-        if (error) throw error;
-        dataToExport = data
-          .filter((d: any) => {
-            if (filters?.mapel && d.mapel !== filters.mapel) return false;
-            if (filters?.kelas && d.kelas !== filters.kelas) return false;
-            return true;
-          })
-          .map((d: any) => ({
-          'Tanggal Input': new Date(d.created_at).toLocaleDateString('id-ID'),
-          'Kelas': d.kelas,
-          'Mata Pelajaran': d.mapel,
-          'Jenis Penilaian': d.jenis_penilaian,
-          'Nilai': d.nilai,
-        }));
+        let queryNilai = supabase.from('student_scores').select('*').eq('user_id', profile.user_id);
+        if (filters?.mapel) queryNilai = queryNilai.eq('mapel', filters.mapel);
+        if (filters?.kelas) queryNilai = queryNilai.eq('kelas', filters.kelas);
+        if (range.gte) queryNilai = queryNilai.gte('created_at', range.gte).lte('created_at', range.lte);
+        const { data: nilaiData, error: nilaiError } = await queryNilai.order('created_at', { ascending: false });
+        if (nilaiError) throw nilaiError;
+
+        const { data: siswaData, error: siswaError } = await supabase.from('students').select('id, nama_siswa, kelas');
+        if (siswaError) throw siswaError;
+
+        dataToExport = (nilaiData ?? []).map((d: any) => {
+          const siswa = siswaData?.find((s: any) => String(s.id) === String(d.student_id));
+          return {
+            'Tanggal Input': d.created_at ? new Date(d.created_at).toLocaleDateString('id-ID') : '-',
+            'Nama Siswa': siswa?.nama_siswa || '-',
+            'Kelas': siswa?.kelas || d.kelas || '-',
+            'Mata Pelajaran': d.mapel,
+            'Jenis Penilaian': d.jenis_penilaian,
+            'Nilai': d.nilai,
+          };
+        });
 
       } else if (jenis === 'bk') {
         let query = supabase.from('bk_records').select('*');
         if (!isGureBK && profile.is_wali_kelas) {
           query = query.eq('kelas', profile.kelas_wali);
         }
+        if (range.gte) query = query.gte('created_at', range.gte).lte('created_at', range.lte);
 
         const { data: bkData, error: bkError } = await query.order('created_at', { ascending: true });
         if (bkError) throw bkError;
@@ -241,7 +255,6 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
 
         const filteredBk = bkData.filter((d: any) => {
           if (filters?.kelas && d.kelas !== filters.kelas) return false;
-          if (!filterBulan(d.created_at)) return false;
           return true;
         });
 
@@ -256,7 +269,7 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
             pBobot = ekstrakBobotDariTeks(d.detail_kasus);
           }
 
-          const tglStr = new Date(d.created_at).toLocaleDateString('id-ID');
+          const tglStr = d.created_at ? new Date(d.created_at).toLocaleDateString('id-ID') : '-';
 
           if (!excelGroup[namaSiswa]) {
             excelGroup[namaSiswa] = {
@@ -284,10 +297,12 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
         fileName = `Akumulasi_BK${labelKelas}`;
 
       } else if (jenis === 'ekskul_jurnal') {
-        const { data, error } = await supabase.from('teaching_journals').select('*').eq('user_id', profile.user_id).ilike('mata_pelajaran', '%Ekskul%').order('created_at', { ascending: false });
+        let queryEkskul = supabase.from('teaching_journals').select('*').eq('user_id', profile.user_id).ilike('mata_pelajaran', '%Ekskul%');
+        if (range.gte) queryEkskul = queryEkskul.gte('created_at', range.gte).lte('created_at', range.lte);
+        const { data, error } = await queryEkskul.order('created_at', { ascending: false });
         if (error) throw error;
         dataToExport = data.map((d: any) => ({
-          'Tanggal Latihan': new Date(d.created_at).toLocaleDateString('id-ID'),
+          'Tanggal Latihan': d.created_at ? new Date(d.created_at).toLocaleDateString('id-ID') : '-',
           'Ekstrakurikuler': d.mata_pelajaran,
           'Topik / Kegiatan': d.materi_pembelajaran,
           'Catatan Evaluasi': d.catatan_kelas || '-',
@@ -302,7 +317,7 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
           'Kelas Rombel': d.students?.kelas,
           'NISN': d.students?.nisn,
           'Nama Ekstrakurikuler': d.nama_ekskul,
-          'Tanggal Bergabung': new Date(d.created_at).toLocaleDateString('id-ID'),
+          'Tanggal Bergabung': d.created_at ? new Date(d.created_at).toLocaleDateString('id-ID') : '-',
         }));
         fileName = `Daftar_Anggota_Ekskul_${profile.nama_ekstrakurikuler}`;
 
@@ -338,6 +353,112 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
     }
   };
 
+  const handleDownloadAgenda = async (selectedBulan: string) => {
+    if (!profile || !profile.kelas_wali) return;
+    setLoadingDownload(true);
+    try {
+      const monthMapping: { [key: string]: string } = {
+        'Januari': '01', 'Februari': '02', 'Maret': '03', 'April': '04',
+        'Mei': '05', 'Juni': '06', 'Juli': '07', 'Agustus': '08',
+        'September': '09', 'Oktober': '10', 'November': '11', 'Desember': '12',
+      };
+      const buildRange = (bulan: string) => {
+        const m = monthMapping[bulan];
+        if (!m) return { gte: undefined, lte: undefined };
+        const y = new Date().getFullYear();
+        const start = `${y}-${m}-01T00:00:00.000Z`;
+        const lastDay = new Date(y, parseInt(m), 0).getDate();
+        return { gte: start, lte: `${y}-${m}-${lastDay}T23:59:59.999Z` };
+      };
+      const range = buildRange(selectedBulan);
+
+      /* Tarik jurnal untuk kelas wali */
+      let qJ = supabase.from('teaching_journals').select('*').eq('kelas', profile.kelas_wali);
+      if (range.gte) qJ = qJ.gte('created_at', range.gte).lte('created_at', range.lte);
+      const { data: journals, error: eJ } = await qJ.order('created_at', { ascending: true });
+      if (eJ) throw eJ;
+      if (!journals?.length) {
+        toast.error(`Belum ada data jurnal untuk kelas ${profile.kelas_wali} pada periode ini.`);
+        return;
+      }
+
+      /* Tarik kehadiran siswa */
+      const jIds = journals.map((j: any) => j.id);
+      const { data: att, error: eA } = await supabase
+        .from('student_attendances')
+        .select('teaching_journal_id, status')
+        .in('teaching_journal_id', jIds);
+      if (eA) throw eA;
+
+      /* Statistik kehadiran per jurnal */
+      const statMap: Record<number, { h: number; s: number; i: number; a: number }> = {};
+      (att ?? []).forEach((a: any) => {
+        const tid = a.teaching_journal_id;
+        if (!statMap[tid]) statMap[tid] = { h: 0, s: 0, i: 0, a: 0 };
+        if (a.status === 'Hadir') statMap[tid].h++;
+        else if (a.status === 'Sakit') statMap[tid].s++;
+        else if (a.status === 'Izin') statMap[tid].i++;
+        else if (a.status === 'Alfa' || a.status === 'Alpha') statMap[tid].a++;
+      });
+
+      /* Susun data untuk XLSX */
+      const colHeaders = [
+        'No', 'Hari / Tanggal', 'Jam Ke', 'Mata Pelajaran',
+        'Topik / Materi Pembelajaran', 'Catatan Kelas',
+        'Hadir', 'Sakit', 'Izin', 'Alfa',
+        'Tanda Tangan Guru Mapel',
+      ];
+
+      const rows = journals.map((j: any, idx: number) => {
+        const s = statMap[j.id] || { h: 0, s: 0, i: 0, a: 0 };
+        const tgl = j.created_at
+          ? new Date(j.created_at).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+          : '-';
+        return [
+          idx + 1, tgl, j.jam_ke || '-', j.mata_pelajaran || '-',
+          j.materi_pembelajaran || '-', j.catatan_kelas || '-',
+          s.h, s.s, s.i, s.a, '',
+        ];
+      });
+
+      const wb = XLSX.utils.book_new();
+      const wsData: any[][] = [
+        ['AGENDA KELAS'],
+        [`Kelas: ${profile.kelas_wali}`],
+        [`Periode: ${selectedBulan || 'Semua Bulan'} ${new Date().getFullYear()}`],
+        [],
+        colHeaders,
+        ...rows,
+        [],
+        ['', '', '', '', '', '', '', '', '', '', ''],
+        ['Mengetahui,', '', '', '', '', '', '', '', '', '', 'Mengetahui,'],
+        ['Wali Kelas', '', '', '', '', '', '', '', '', '', 'Kepala Sekolah'],
+        [],
+        ['( ___________________ )', '', '', '', '', '', '', '', '', '', '( ___________________ )'],
+        [profile.nama_lengkap, '', '', '', '', '', '', '', '', '', ''],
+      ];
+
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 10 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 10 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 10 } },
+      ];
+      ws['!cols'] = [
+        { wch: 5 }, { wch: 28 }, { wch: 8 }, { wch: 22 },
+        { wch: 32 }, { wch: 26 }, { wch: 7 }, { wch: 7 },
+        { wch: 7 }, { wch: 7 }, { wch: 30 },
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Agenda Kelas');
+      XLSX.writeFile(wb, `Agenda_Kelas_${profile.kelas_wali}_${selectedBulan || 'Semua'}.xlsx`);
+    } catch (err: any) {
+      toast.error(`Gagal mengunduh agenda: ${err.message}`);
+    } finally {
+      setLoadingDownload(false);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -356,7 +477,7 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
           <div className="flex-1 flex-col items-start gap-1">
             <div className="badge badge-soft badge-info badge-sm uppercase tracking-widest">Dashboard Utama</div>
             <h2 className="mt-0.5 text-xl font-extrabold text-slate-900 sm:text-2xl">{profile?.nama_lengkap}</h2>
-            <p className="text-xs font-medium text-slate-500">Silakan pilih menu sesuai aktivitas tugas Anda.</p>
+            <p className="text-sm font-medium text-slate-500">Silakan pilih menu sesuai aktivitas tugas Anda.</p>
           </div>
           <div className="flex-none gap-2">
             <OnlineStatus pendingCount={pendingCount} onSyncNow={syncNow} syncing={syncing} />
@@ -380,7 +501,7 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
                   <Satellite className="size-5" />
                 </div>
                 <h3 className="card-title text-sm text-slate-900">Panel Guru Piket Harian</h3>
-                <p className="text-xs leading-relaxed text-slate-500">
+                <p className="text-sm leading-relaxed text-slate-500">
                   Akses kendali validasi izin pendidik dan monitor radar absensi harian sekolah.
                 </p>
               </div>
@@ -398,7 +519,7 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
                   <AlertTriangle className="size-5" />
                 </div>
                 <h3 className="card-title text-sm text-slate-900">Panel Guru Bimbingan Konseling (BK)</h3>
-                <p className="text-xs leading-relaxed text-slate-500">
+                <p className="text-sm leading-relaxed text-slate-500">
                   Akses radar rekap kasus kerawanan siswa dan koordinasi penanganan konseling sekolah.
                 </p>
               </div>
@@ -416,7 +537,7 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
                   <Backpack className="size-5" />
                 </div>
                 <h3 className="card-title text-sm text-slate-900">Guru Mata Pelajaran</h3>
-                <p className="text-xs leading-relaxed text-slate-500">
+                <p className="text-sm leading-relaxed text-slate-500">
                   Kelola Jurnal Pengajaran harian, Presensi Siswa, dan Input Nilai.
                 </p>
               </div>
@@ -437,7 +558,7 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
                   Absensi Kelas Binaan
                   {profile.kelas_wali && <span className="badge badge-soft badge-amber badge-sm ml-1">{profile.kelas_wali}</span>}
                 </h3>
-                <p className="text-xs leading-relaxed text-slate-500">
+                <p className="text-sm leading-relaxed text-slate-500">
                   Mengelola absensi harian &amp; kasus BK khusus siswa kelas binaan.
                 </p>
               </div>
@@ -458,7 +579,7 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
                   Kegiatan Ekstrakurikuler
                   <span className="badge badge-soft badge-violet badge-sm ml-1">{profile.nama_ekstrakurikuler}</span>
                 </h3>
-                <p className="text-xs leading-relaxed text-slate-500">
+                <p className="text-sm leading-relaxed text-slate-500">
                   Input log pelaksanaan latihan, manajemen rombel &amp; nilai kualitatif.
                 </p>
               </div>
@@ -476,7 +597,7 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
                 <CalendarX className="size-5" />
               </div>
               <h3 className="card-title text-sm text-slate-900">Pengajuan Berhalangan Hadir</h3>
-              <p className="text-xs leading-relaxed text-slate-500">
+              <p className="text-sm leading-relaxed text-slate-500">
                 Ajukan surat izin sakit, dinas, atau keperluan mendesak untuk diverifikasi guru piket.
               </p>
             </div>
@@ -497,8 +618,8 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
                   <BarChart3 className="size-4 text-slate-600" />
                   Pusat Unduh Laporan Mandiri
                 </h3>
-                <p className="text-xs font-medium text-slate-500">
-                  Ekspor rekap data milik Anda langsung ke format Excel (.xlsx) atau PDF (.pdf)
+                <p className="text-sm font-medium text-slate-500">
+                  Ekspor rekap data milik Anda ke format Excel (.xlsx)
                 </p>
               </div>
               {loadingDownload && (
@@ -509,16 +630,21 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {profile?.mapel && (
-                <>
+            {/* ── Kelompok Guru Mapel ── */}
+            {profile?.mapel && (
+              <div className="space-y-2">
+                <h4 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <Backpack className="size-3.5" />
+                  Kelompok Guru Mapel
+                </h4>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   <button
                     onClick={() => setModalJenis('jurnal')}
                     disabled={loadingDownload}
                     className="btn btn-outline btn-sm h-auto min-h-0 gap-2 border-slate-300 px-3 py-3 text-[11px] font-semibold text-slate-700 hover:border-blue-500 hover:text-blue-600 disabled:opacity-40"
                   >
                     <ScrollText className="size-4" />
-                    Jurnal Mapel
+                    Unduh Jurnal Mapel
                   </button>
                   <button
                     onClick={() => setModalJenis('nilai')}
@@ -526,13 +652,59 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
                     className="btn btn-outline btn-sm h-auto min-h-0 gap-2 border-slate-300 px-3 py-3 text-[11px] font-semibold text-slate-700 hover:border-emerald-500 hover:text-emerald-600 disabled:opacity-40"
                   >
                     <ClipboardCheck className="size-4" />
-                    Nilai Mapel
+                    Unduh Nilai Mapel
                   </button>
-                </>
-              )}
+                </div>
+              </div>
+            )}
 
-              {(profile?.is_wali_kelas || isGureBK) && (
-                <>
+            {/* ── Kelompok Ekstrakurikuler ── */}
+            {profile?.nama_ekstrakurikuler && (
+              <div className="space-y-2">
+                <h4 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <Trophy className="size-3.5" />
+                  Kelompok Ekstrakurikuler
+                </h4>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  <button
+                    onClick={() => handleDownload('ekskul_jurnal')}
+                    disabled={loadingDownload}
+                    className="btn btn-outline btn-sm h-auto min-h-0 gap-2 border-slate-300 px-3 py-3 text-[11px] font-semibold text-slate-700 hover:border-violet-500 hover:text-violet-600 disabled:opacity-40"
+                  >
+                    <ScrollText className="size-4" />
+                    Jurnal Latihan
+                  </button>
+                  <button
+                    onClick={() => handleDownload('ekskul_anggota')}
+                    disabled={loadingDownload}
+                    className="btn btn-outline btn-sm h-auto min-h-0 gap-2 border-slate-300 px-3 py-3 text-[11px] font-semibold text-slate-700 hover:border-violet-500 hover:text-violet-600 disabled:opacity-40"
+                  >
+                    <Users className="size-4" />
+                    Anggota Rombel
+                  </button>
+                  <button
+                    onClick={() => handleDownload('ekskul_nilai')}
+                    disabled={loadingDownload}
+                    className="btn btn-outline btn-sm h-auto min-h-0 gap-2 border-slate-300 px-3 py-3 text-[11px] font-semibold text-slate-700 hover:border-violet-500 hover:text-violet-600 disabled:opacity-40"
+                  >
+                    <Star className="size-4" />
+                    Nilai Kualitatif
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Kelompok Tugas Tambahan (Wali Kelas) ── */}
+            {(profile?.is_wali_kelas || isGureBK) && (
+              <div className="space-y-2">
+                <h4 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <Home className="size-3.5" />
+                  Kelompok Tugas Tambahan (Wali Kelas)
+                  {profile?.kelas_wali && (
+                    <span className="badge badge-soft badge-amber badge-xs">{profile.kelas_wali}</span>
+                  )}
+                </h4>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   <button
                     onClick={() => setModalJenis('bk')}
                     disabled={loadingDownload}
@@ -549,38 +721,19 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
                     <FileText className="size-4" />
                     Rekap BK (PDF)
                   </button>
-                </>
-              )}
-
-              {profile?.nama_ekstrakurikuler && (
-                <>
-                  <button
-                    onClick={() => handleDownload('ekskul_jurnal')}
-                    disabled={loadingDownload}
-                    className="btn btn-soft btn-secondary btn-sm h-auto min-h-0 gap-2 px-3 py-3 text-[11px] font-bold disabled:opacity-40"
-                  >
-                    <ScrollText className="size-4" />
-                    Jurnal Latihan
-                  </button>
-                  <button
-                    onClick={() => handleDownload('ekskul_anggota')}
-                    disabled={loadingDownload}
-                    className="btn btn-soft btn-secondary btn-sm h-auto min-h-0 gap-2 px-3 py-3 text-[11px] font-bold disabled:opacity-40"
-                  >
-                    <Users className="size-4" />
-                    Anggota Rombel
-                  </button>
-                  <button
-                    onClick={() => handleDownload('ekskul_nilai')}
-                    disabled={loadingDownload}
-                    className="btn btn-soft btn-secondary btn-sm h-auto min-h-0 gap-2 px-3 py-3 text-[11px] font-bold disabled:opacity-40"
-                  >
-                    <Star className="size-4" />
-                    Nilai Kualitatif
-                  </button>
-                </>
-              )}
-            </div>
+                  {profile?.is_wali_kelas && (
+                    <button
+                      onClick={() => setModalJenis('agenda')}
+                      disabled={loadingDownload}
+                      className="btn btn-soft btn-warning btn-sm h-auto min-h-0 gap-2 px-3 py-3 text-[11px] font-bold disabled:opacity-40 col-span-2 sm:col-span-1"
+                    >
+                      <ClipboardCheck className="size-4" />
+                      Unduh Agenda Kelas
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -597,14 +750,18 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
           mataPelajaranData={mataPelajaranData}
           isGureBK={isGureBK}
           onDownload={(params) => {
-            handleDownload(
-              params.jenis as 'jurnal' | 'nilai' | 'bk',
-              {
-                bulan: params.selectedBulan || undefined,
-                kelas: params.selectedKelas || undefined,
-                mapel: params.selectedMapel || undefined,
-              },
-            );
+            if (params.jenis === 'agenda') {
+              handleDownloadAgenda(params.selectedBulan);
+            } else {
+              handleDownload(
+                params.jenis as 'jurnal' | 'nilai' | 'bk',
+                {
+                  bulan: params.selectedBulan || undefined,
+                  kelas: params.selectedKelas || undefined,
+                  mapel: params.selectedMapel || undefined,
+                },
+              );
+            }
             setModalJenis(null);
           }}
         />

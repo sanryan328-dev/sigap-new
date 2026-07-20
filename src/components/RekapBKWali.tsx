@@ -34,16 +34,16 @@ export default function RekapBKWali({ setSubMenuWali, dataBk, loadingBk }: Rekap
           <button
             type="button"
             onClick={() => setSubMenuWali(null)}
-            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-lg transition-colors cursor-pointer"
           >
             ⬅️ Panel Wali Kelas
           </button>
-          <span className="text-xs font-semibold text-slate-700">Kelas Wali: {profile?.kelas_wali}</span>
+          <span className="text-sm font-semibold text-slate-700">Kelas Wali: {profile?.kelas_wali}</span>
         </div>
 
         <div className="mb-6">
           <h1 className="text-xl font-bold text-amber-900">Rekapitulasi Catatan Bimbingan Konseling (BK)</h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             Berikut adalah daftar riwayat kerawanan, kasus, atau pembinaan yang tercatat oleh Guru BK untuk siswa kelas Anda.
           </p>
         </div>
@@ -51,12 +51,12 @@ export default function RekapBKWali({ setSubMenuWali, dataBk, loadingBk }: Rekap
         {/* Tabel Data BK */}
         <div className="border border-slate-200 rounded-xl bg-white overflow-hidden">
           {loadingBk ? (
-            <p className="text-xs text-slate-500 animate-pulse p-8 text-center">Menarik riwayat catatan BK siswa dari database...</p>
+            <p className="text-sm text-slate-500 animate-pulse p-8 text-center">Menarik riwayat catatan BK siswa dari database...</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-700 font-medium text-xs">
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-700 font-medium text-sm">
                     <th className="p-4">Tanggal</th>
                     <th className="p-4">Nama Siswa</th>
                     <th className="p-4">Kategori Kasus</th>
@@ -65,7 +65,7 @@ export default function RekapBKWali({ setSubMenuWali, dataBk, loadingBk }: Rekap
                     <th className="p-4 text-center">Status Binaan</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
                   {dataBk.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="p-8 text-center text-slate-400 font-medium">

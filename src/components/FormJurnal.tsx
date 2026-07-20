@@ -17,8 +17,8 @@ interface FormJurnalProps {
   setMataPelajaran: (val: string) => void;
   jamMulai: string;
   setJamMulai: (val: string) => void;
-  jamSelesai: string;
-  setJamSelesai: (val: string) => void;
+  durasiJam: string;
+  setDurasiJam: (val: string) => void;
   materi: string;
   setMateri: (val: string) => void;
   catatan: string;
@@ -30,6 +30,7 @@ interface FormJurnalProps {
   handleSubmitJurnal: (e: React.FormEvent) => void;
   loadingSiswa: boolean;
   loadingSimpan: boolean;
+  errorJadwal?: string;
 }
 
 export default function FormJurnal({
@@ -41,8 +42,8 @@ export default function FormJurnal({
   setMataPelajaran,
   jamMulai,
   setJamMulai,
-  jamSelesai,
-  setJamSelesai,
+  durasiJam,
+  setDurasiJam,
   materi,
   setMateri,
   catatan,
@@ -54,47 +55,55 @@ export default function FormJurnal({
   handleSubmitJurnal,
   loadingSiswa,
   loadingSimpan,
+  errorJadwal,
 }: FormJurnalProps) {
   const profile = useAuthStore((s) => s.profile);
   const [parentPresensi] = useAutoAnimate();
 
   const renderLabelKembali = () => {
-    if (currentRole === 'guru_mapel') return '⬅️ Panel Guru Mapel';
-    if (currentRole === 'wali_kelas') return '⬅️ Panel Wali Kelas';
-    if (currentRole === 'pembina_ekskul') return '⬅️ Panel Ekstrakurikuler';
-    return '⬅️ Kembali';
+    if (currentRole === 'guru_mapel') return '⬅ Panel Guru Mapel';
+    if (currentRole === 'wali_kelas') return '⬅ Panel Wali Kelas';
+    if (currentRole === 'pembina_ekskul') return '⬅ Panel Ekstrakurikuler';
+    return '⬅ Kembali';
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 flex flex-col items-center">
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
-        
-        <div className="mb-6 pb-4 border-b border-slate-100 flex items-center justify-between">
+    <div className="min-h-screen" style={{ backgroundColor: '#fefaef', color: '#1d1601' }}>
+      <div className="mx-auto w-full max-w-4xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8" style={{ backgroundColor: '#fefaef' }}>
+
+        <div className="mb-6 flex items-center justify-between border-b pb-4" style={{ borderColor: '#f4aa18' }}>
           <button
             type="button"
-            // 🔥 PERBAIKAN PENTING: Mendukung alur navigasi balik secara adaptif untuk tiap role
             onClick={() => setSubMenu(null)}
-            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+            className="cursor-pointer rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors"
+            style={{ backgroundColor: '#f4aa18', color: '#1d1601' }}
           >
             {renderLabelKembali()}
           </button>
-          <span className="text-xs font-semibold text-slate-700">{profile?.nama_lengkap}</span>
+          <span className="text-sm font-semibold" style={{ color: '#1d1601' }}>{profile?.nama_lengkap}</span>
         </div>
 
         <div className="mb-6">
-          <h1 className="text-xl font-bold text-blue-900">Form Jurnal & Presensi Terpadu</h1>
-          <p className="text-xs text-slate-500 mt-1">Isi materi pembelajaran dan perbarui status absensi siswa secara berkala.</p>
+          <h1 className="text-xl font-bold" style={{ color: '#1d1601' }}>Form Jurnal & Presensi Terpadu</h1>
+          <p className="mt-1" style={{ color: '#1d1601', opacity: 0.7 }}>Isi materi pembelajaran dan perbarui status absensi siswa secara berkala.</p>
         </div>
 
+        {errorJadwal && (
+          <div className="mb-4 rounded-xl border p-4 text-sm font-semibold" style={{ backgroundColor: '#fefaef', borderColor: '#f4aa18', color: '#1d1601' }}>
+            ⚠ {errorJadwal}
+          </div>
+        )}
+
         <form onSubmit={handleSubmitJurnal} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">Pilih Kelas</label>
-              <select 
-                value={kelas} 
+              <label className="mb-1 block text-sm font-medium" style={{ color: '#1d1601' }}>Pilih Kelas</label>
+              <select
+                value={kelas}
                 onChange={(e) => setKelas(e.target.value)}
                 disabled={loadingSimpan || currentRole === 'wali_kelas'}
-                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs disabled:bg-slate-100 font-semibold"
+                className="w-full rounded-lg border px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 disabled:bg-slate-100"
+                style={{ borderColor: '#f4aa18', backgroundColor: '#fefaef', color: '#1d1601' }}
               >
                 {daftarKelas.map((namaKelas) => (
                   <option key={namaKelas} value={namaKelas}>{namaKelas}</option>
@@ -103,24 +112,26 @@ export default function FormJurnal({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">Mata Pelajaran / Agenda</label>
-              <input 
-                type="text" 
-                value={mataPelajaran} 
+              <label className="mb-1 block text-sm font-medium" style={{ color: '#1d1601' }}>Mata Pelajaran / Agenda</label>
+              <input
+                type="text"
+                value={mataPelajaran}
                 onChange={(e) => setMataPelajaran(e.target.value)}
                 disabled={loadingSimpan || currentRole !== 'pembina_ekskul'}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs disabled:bg-slate-100 font-semibold"
+                className="w-full rounded-lg border px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 disabled:bg-slate-100"
+                style={{ borderColor: '#f4aa18', backgroundColor: '#fefaef', color: '#1d1601' }}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Jam Mulai</label>
-                <select 
-                  value={jamMulai} 
+                <label className="mb-1 block text-sm font-medium" style={{ color: '#1d1601' }}>Jam Mulai Mengajar</label>
+                <select
+                  value={jamMulai}
                   onChange={(e) => setJamMulai(e.target.value)}
                   disabled={loadingSimpan}
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                  className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                  style={{ borderColor: '#f4aa18', backgroundColor: '#fefaef', color: '#1d1601' }}
                 >
                   {[...Array(10)].map((_, i) => (
                     <option key={i + 1} value={i + 1}>Jam Ke-{i + 1}</option>
@@ -129,15 +140,16 @@ export default function FormJurnal({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Jam Selesai</label>
-                <select 
-                  value={jamSelesai} 
-                  onChange={(e) => setJamSelesai(e.target.value)}
+                <label className="mb-1 block text-sm font-medium" style={{ color: '#1d1601' }}>Durasi (Jam Pelajaran)</label>
+                <select
+                  value={durasiJam}
+                  onChange={(e) => setDurasiJam(e.target.value)}
                   disabled={loadingSimpan}
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                  className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                  style={{ borderColor: '#f4aa18', backgroundColor: '#fefaef', color: '#1d1601' }}
                 >
-                  {[...Array(10)].map((_, i) => (
-                    <option key={i + 1} value={i + 1}>Jam Ke-{i + 1}</option>
+                  {[...Array(6)].map((_, i) => (
+                    <option key={i + 1} value={i + 1}>{i + 1} Jam</option>
                   ))}
                 </select>
               </div>
@@ -145,67 +157,75 @@ export default function FormJurnal({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">Materi Pembelajaran / Uraian Kegiatan</label>
-            <textarea 
-              value={materi} 
+            <label className="mb-1 block text-sm font-medium" style={{ color: '#1d1601' }}>Materi Pembelajaran / Uraian Kegiatan</label>
+            <textarea
+              value={materi}
               onChange={(e) => setMateri(e.target.value)}
               placeholder="Tulis ringkasan materi atau agenda kegiatan hari ini..."
               rows={3}
               disabled={loadingSimpan}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2"
+              style={{ borderColor: '#f4aa18', backgroundColor: '#fefaef', color: '#1d1601' }}
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">Catatan Kejadian Penting (Opsional)</label>
-            <input 
-              type="text" 
-              value={catatan} 
+            <label className="mb-1 block text-sm font-medium" style={{ color: '#1d1601' }}>Catatan Kejadian Penting (Opsional)</label>
+            <input
+              type="text"
+              value={catatan}
               onChange={(e) => setCatatan(e.target.value)}
               placeholder="Contoh: Pembelajaran kondusif, semua tugas dikumpulkan"
               disabled={loadingSimpan}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2"
+              style={{ borderColor: '#f4aa18', backgroundColor: '#fefaef', color: '#1d1601' }}
             />
           </div>
 
-          <div className="border-t border-slate-100 pt-6">
-            <h2 className="text-base font-semibold text-slate-800 mb-4">Presensi Siswa Kelas {kelas || '...'}</h2>
+          <div className="border-t pt-6" style={{ borderColor: '#f4aa18' }}>
+            <h2 className="mb-4 text-base font-semibold" style={{ color: '#1d1601' }}>Presensi Siswa Kelas {kelas || '...'}</h2>
 
-            {loadingSiswa && <p className="text-xs text-slate-500 animate-pulse">Mengambil data siswa...</p>}
-            
+            {loadingSiswa && <p className="animate-pulse text-sm" style={{ color: '#1d1601', opacity: 0.6 }}>Mengambil data siswa...</p>}
+
             {!loadingSiswa && (
-              <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white">
-                <table className="w-full text-left border-collapse min-w-[400px]">
+              <div className="overflow-x-auto rounded-xl border" style={{ borderColor: '#f4aa18', backgroundColor: '#fefaef' }}>
+                <table className="w-full min-w-[400px] text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-700 font-medium text-xs">
+                    <tr className="text-sm font-medium" style={{ backgroundColor: '#f4aa18', color: '#1d1601' }}>
                       <th className="p-4">Nama Siswa</th>
                       <th className="p-4 text-center">Status Kehadiran</th>
                     </tr>
                   </thead>
-                  <tbody ref={parentPresensi} className="divide-y divide-slate-100 text-xs">
+                  <tbody ref={parentPresensi} className="divide-y text-sm" style={{ color: '#1d1601' }}>
                     {daftarSiswa.length === 0 ? (
                       <tr>
-                        <td colSpan={2} className="p-8 text-center text-slate-400">Tidak ada data siswa untuk kelas ini.</td>
+                        <td colSpan={2} className="p-8 text-center" style={{ color: '#1d1601', opacity: 0.5 }}>Tidak ada data siswa untuk kelas ini.</td>
                       </tr>
                     ) : (
                       daftarSiswa.map((siswa) => (
-                        <tr key={siswa.id} className="hover:bg-slate-50/50">
-                          <td className="p-4 font-medium text-slate-800">{siswa.nama_siswa}</td>
-                          <td className="p-4 flex justify-center gap-2">
+                        <tr key={siswa.id} className="hover:opacity-90">
+                          <td className="p-4 font-medium" style={{ color: '#1d1601' }}>{siswa.nama_siswa}</td>
+                          <td className="flex justify-center gap-2 p-4">
                             {['Hadir', 'Sakit', 'Izin', 'Alpha'].map((status) => (
                               <button
                                 key={status}
                                 type="button"
                                 disabled={loadingSimpan}
                                 onClick={() => handleStatusChange(siswa.id, status)}
-                                className={`px-4 py-1.5 rounded-lg text-[10px] font-semibold tracking-wide transition-all cursor-pointer ${
+                                className={`cursor-pointer rounded-lg px-4 py-1.5 text-sm font-semibold tracking-wide transition-all ${
                                   presensi[siswa.id] === status
-                                    ? status === 'Hadir' ? 'bg-green-600 text-white' :
-                                      status === 'Sakit' ? 'bg-amber-500 text-white' :
-                                      status === 'Izin' ? 'bg-blue-600 text-white' : 'bg-red-600 text-white'
-                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                    ? status === 'Hadir' ? 'text-white' :
+                                      status === 'Sakit' ? 'text-white' :
+                                      status === 'Izin' ? 'text-white' : 'text-white'
+                                    : 'text-slate-600 hover:bg-slate-200'
                                 }`}
+                                style={presensi[siswa.id] === status ? {
+                                  backgroundColor: status === 'Hadir' ? '#8ff871' :
+                                    status === 'Sakit' ? '#f4aa18' :
+                                    status === 'Izin' ? '#f4aa18' : '#f4aa18',
+                                  color: '#1d1601'
+                                } : { backgroundColor: '#fefaef', color: '#1d1601' }}
                               >
                                 {status}
                               </button>
@@ -220,10 +240,13 @@ export default function FormJurnal({
             )}
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={loadingSimpan || daftarSiswa.length === 0}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition-colors shadow-sm cursor-pointer text-xs disabled:bg-slate-300"
+            className="w-full cursor-pointer rounded-xl py-3 text-sm font-bold shadow-sm transition-colors disabled:opacity-50"
+            style={{ backgroundColor: '#f4aa18', color: '#1d1601' }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#4bf666')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#f4aa18')}
           >
             {loadingSimpan ? 'Sedang Menyimpan Jurnal...' : 'Simpan Jurnal & Presensi'}
           </button>

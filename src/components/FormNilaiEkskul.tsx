@@ -125,7 +125,7 @@ export default function FormNilaiEkskul({ profile, onBack }: FormNilaiEkskulProp
             <h2 className="mt-0.5 text-xl font-extrabold text-slate-900 sm:text-2xl">
               {profile.nama_ekstrakurikuler}
             </h2>
-            <p className="text-xs font-medium text-slate-500">{profile.nama_lengkap}</p>
+            <p className="text-sm font-medium text-slate-500">{profile.nama_lengkap}</p>
           </div>
           <div className="flex-none">
             <button onClick={onBack} className="btn btn-ghost btn-sm">
@@ -149,7 +149,7 @@ export default function FormNilaiEkskul({ profile, onBack }: FormNilaiEkskulProp
                   <Trophy className="size-4 text-violet-500" />
                   Input Nilai & Deskripsi Capaian
                 </h3>
-                <p className="text-xs font-medium text-slate-500">
+                <p className="text-sm font-medium text-slate-500">
                   Berikan predikat A/B/C/D dan deskripsi kemajuan untuk setiap anggota.
                 </p>
               </div>
@@ -175,7 +175,7 @@ export default function FormNilaiEkskul({ profile, onBack }: FormNilaiEkskulProp
                 <p className="text-sm font-medium text-slate-400">
                   Belum ada anggota terdaftar untuk ekskul ini.
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-sm text-slate-400">
                   Tambahkan anggota terlebih dahulu melalui menu Anggota Ekskul.
                 </p>
               </div>

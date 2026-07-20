@@ -159,11 +159,27 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
         if (error) throw error;
         toast.success('Catatan pembinaan berhasil diperbarui!');
       } else {
-        const { error } = await supabase
+        const { data: inserted, error } = await supabase
           .from('bk_records')
-          .insert([{ ...payload, created_at: new Date().toISOString() }]);
+          .insert([{ ...payload, created_at: new Date().toISOString() }])
+          .select()
+          .single();
         if (error) throw error;
         toast.success('Kasus baru berhasil dicatat!');
+
+        /* Notifikasi otomatis ke piket: Guru BK sedang menangani kasus */
+        try {
+          const todayStr = new Date().toISOString().split('T')[0];
+          await supabase.from('teacher_absences').insert({
+            user_id: parseInt(userId),
+            tanggal_absen: todayStr,
+            status_izin: 'izin_keperluan',
+            alasan_detail: `NOTIFIKASI: Sedang Menangani Kasus Siswa di Ruang BK (Nomor Kasus: ${inserted.id})`,
+            status_verifikasi: 'diverifikasi_piket',
+          });
+        } catch (notifErr: any) {
+          console.error('Gagal membuat notifikasi BK (non-fatal):', notifErr.message);
+        }
       }
 
       setFormKasus({ id: '', student_id: '', kelas: '', kategori_kasus: '', jenis_kasus: '', bobot_pelanggaran: 0, detail_kasus: '', tindakan_penanganan: '', status: 'Sedang Dibina' });
@@ -220,7 +236,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
         <div className="w-full max-w-3xl bg-white rounded-2xl shadow-sm border border-slate-100 p-5 sm:p-8 space-y-6">
           <div className="flex justify-between items-center border-b border-slate-100 pb-5">
             <div>
-              <span className="text-xs font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
+              <span className="text-sm font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
                 BK SPENSAWA
               </span>
               <h2 className="text-lg sm:text-xl font-bold text-slate-800 mt-1.5">{isEditKasus ? '✏️ Edit Pembinaan' : '➕ Input Kasus Baru'}</h2>
@@ -232,7 +248,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
                 setFormKasus({ id: '', student_id: '', kelas: '', kategori_kasus: '', jenis_kasus: '', bobot_pelanggaran: 0, detail_kasus: '', tindakan_penanganan: '', status: 'Sedang Dibina' });
                 setFilterKelasInput('');
               }}
-              className="text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer font-medium"
+              className="text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer font-medium"
             >
               ⬅️ Kembali
             </button>
@@ -250,7 +266,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
                     setFilterKelasInput(e.target.value);
                     setFormKasus(prev => ({ ...prev, student_id: '', kelas: '' }));
                   }}
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs bg-white focus:border-purple-500" required
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:border-purple-500" required
                 >
                   <option value="">-- Pilih Kelas --</option>
                   {daftarKelas.map(k => <option key={k} value={k}>{k}</option>)}
@@ -263,7 +279,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
                   value={formKasus.student_id} 
                   onChange={(e) => handlePilihSiswa(e.target.value)} 
                   disabled={!filterKelasInput}
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs bg-white disabled:bg-slate-100 font-medium" required
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white disabled:bg-slate-100 font-medium" required
                 >
                   <option value="">{filterKelasInput ? `-- Pilih Nama (${siswaTerfilterInput.length} Siswa) --` : '-- Pilih Kelas Dahulu --'}</option>
                   {siswaTerfilterInput.map((s) => (
@@ -282,7 +298,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
                   onChange={(e) => {
                     setFormKasus(prev => ({ ...prev, kategori_kasus: e.target.value, jenis_kasus: '', bobot_pelanggaran: 0 }));
                   }} 
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs bg-white font-medium border-purple-200" required
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white font-medium border-purple-200" required
                 >
                   <option value="">-- Pilih Kategori --</option>
                   <option value="ringan">Ringan</option>
@@ -298,7 +314,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
                   value={formKasus.jenis_kasus} 
                   onChange={(e) => handlePilihJenisKasus(e.target.value)} 
                   disabled={!formKasus.kategori_kasus}
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs bg-white disabled:bg-slate-100 font-medium truncate" required
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white disabled:bg-slate-100 font-medium truncate" required
                 >
                   <option value="">{formKasus.kategori_kasus ? `-- Pilih Kasus (${masterPelanggaranTerfilter.length}) --` : '-- Pilih Kategori Dahulu --'}</option>
                   {masterPelanggaranTerfilter.map((p) => (
@@ -317,7 +333,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
                 type="text" 
                 value={formKasus.bobot_pelanggaran ? `${formKasus.bobot_pelanggaran} Poin` : '0 Poin'}
                 disabled
-                className="w-full p-2.5 border border-slate-200 bg-slate-50 text-red-600 font-mono font-bold rounded-lg text-xs"
+                className="w-full p-2.5 border border-slate-200 bg-slate-50 text-red-600 font-mono font-bold rounded-lg text-sm"
               />
             </div>
 
@@ -326,7 +342,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
               <textarea 
                 value={formKasus.detail_kasus} 
                 onChange={(e) => setFormKasus({ ...formKasus, detail_kasus: e.target.value })} 
-                className="w-full p-2 border border-slate-300 rounded-lg text-xs h-16 bg-white resize-none" required 
+                className="w-full p-2 border border-slate-300 rounded-lg text-sm h-16 bg-white resize-none" required 
                 placeholder="Tulis kronologi kejadian..."
               />
             </div>
@@ -336,7 +352,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
               <textarea 
                 value={formKasus.tindakan_penanganan} 
                 onChange={(e) => setFormKasus({ ...formKasus, tindakan_penanganan: e.target.value })} 
-                className="w-full p-2 border border-slate-300 rounded-lg text-xs h-16 bg-white resize-none" required 
+                className="w-full p-2 border border-slate-300 rounded-lg text-sm h-16 bg-white resize-none" required 
                 placeholder="Rencana tindak lanjut bimbingan..."
               />
             </div>
@@ -347,14 +363,14 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
                 <select 
                   value={formKasus.status} 
                   onChange={(e) => setFormKasus({ ...formKasus, status: e.target.value })} 
-                  className="p-1 border border-slate-300 rounded text-xs bg-white font-semibold"
+                  className="p-1 border border-slate-300 rounded text-sm bg-white font-semibold"
                 >
                   <option value="Sedang Dibina">⚠️ Sedang Dibina</option>
                   <option value="Tuntas">✅ Tuntas</option>
                 </select>
               </div>
               <div className="flex gap-2">
-                <button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg text-xs font-bold cursor-pointer transition-colors">
+                <button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg text-sm font-bold cursor-pointer transition-colors">
                   {isEditKasus ? 'Simpan Perubahan' : 'Catat Log Kasus'}
                 </button>
               </div>
@@ -489,7 +505,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
                   <select
                     value={formSesi.bk_record_id}
                     onChange={e => setFormSesi(p => ({ ...p, bk_record_id: e.target.value }))}
-                    className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white"
+                    className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white"
                   >
                     {kasusIds.map((id, idx) => (
                       <option key={id} value={id}>Kasus #{idx + 1} (ID: {id})</option>
@@ -502,7 +518,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
                   <select
                     value={formSesi.status}
                     onChange={e => setFormSesi(p => ({ ...p, status: e.target.value }))}
-                    className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white font-semibold"
+                    className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white font-semibold"
                   >
                     <option value="Dalam Proses">🔄 Dalam Proses</option>
                     <option value="Membaik">📈 Membaik</option>
@@ -522,7 +538,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
                   onChange={e => setFormSesi(p => ({ ...p, catatan_sesi: e.target.value }))}
                   placeholder={`Tuliskan hasil observasi, percakapan, atau perkembangan perilaku ${namaSiswa} pada sesi ini...`}
                   rows={3}
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs bg-white resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 />
               </div>
 
@@ -536,7 +552,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
                   onChange={e => setFormSesi(p => ({ ...p, tindak_lanjut: e.target.value }))}
                   placeholder="Contoh: Panggil orang tua minggu depan. Jadwalkan konseling individu. Koordinasi dengan wali kelas..."
                   rows={2}
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs bg-white resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 />
               </div>
 
@@ -544,7 +560,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
                 <button
                   onClick={handleSimpanSesi}
                   disabled={loadingSimp}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-5 py-2 rounded-lg cursor-pointer transition-colors disabled:bg-slate-300"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-5 py-2 rounded-lg cursor-pointer transition-colors disabled:bg-slate-300"
                 >
                   {loadingSimp ? 'Menyimpan...' : '💾 Simpan Catatan Sesi'}
                 </button>
@@ -622,25 +638,25 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 sm:p-6">
             <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-4">
               <div>
-                <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                <span className="text-sm font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
                   Rekapitulasi Data
                 </span>
                 <h2 className="text-base sm:text-lg font-bold text-slate-800 mt-1">Buku Kendali Bimbingan Konseling</h2>
               </div>
               <button
                 onClick={() => { setSubMenuBK(null); setFilterKelasRekap(''); }}
-                className="text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer font-medium"
+                className="text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer font-medium"
               >
                 ⬅️ Kembali
               </button>
             </div>
 
             <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200/60 w-fit">
-              <label className="text-xs font-bold text-slate-700">Filter Kelas:</label>
+              <label className="text-sm font-bold text-slate-700">Filter Kelas:</label>
               <select
                 value={filterKelasRekap}
                 onChange={(e) => setFilterKelasRekap(e.target.value)}
-                className="p-1.5 border border-slate-300 rounded-lg text-xs bg-white font-medium"
+                className="p-1.5 border border-slate-300 rounded-lg text-sm bg-white font-medium"
               >
                 <option value="">-- Semua Kelas --</option>
                 {daftarKelas.map((k) => <option key={k} value={k}>{k}</option>)}
@@ -699,7 +715,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
                         <Legend
                           iconType="circle"
                           formatter={(value) => (
-                            <span className="text-xs text-base-content/70">{value}</span>
+                            <span className="text-sm text-base-content/70">{value}</span>
                           )}
                         />
                       </PieChart>
@@ -843,7 +859,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
 
           {/* Footer ringkasan */}
           {groupedList.length > 0 && (
-            <div className="flex gap-4 text-xs text-slate-500 px-1 pb-2">
+            <div className="flex gap-4 text-sm text-slate-500 px-1 pb-2">
               <span>Total siswa: <strong className="text-slate-700">{groupedList.length}</strong></span>
               <span>Total kasus: <strong className="text-slate-700">{kasusTerfilterRekap.length}</strong></span>
               <span>Masih dibina: <strong className="text-amber-600">{groupedList.filter(g => g.kasus.some((k: any) => k.status !== 'Tuntas')).length}</strong></span>
@@ -863,17 +879,17 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
         
         <div className="flex justify-between items-start border-b border-slate-100 pb-5 mb-6">
           <div>
-            <span className="text-xs font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
+            <span className="text-sm font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
               Panel Bimbingan Konseling (BK)
             </span>
             <h2 className="text-xl font-bold text-slate-800 mt-1.5">{profile?.nama_lengkap}</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-sm text-slate-500 mt-0.5">
               Kasus Aktif: <strong className="text-amber-600">{kasusAktif} Siswa</strong> | Total: {totalKasus} Kasus Log
             </p>
           </div>
           <button 
             onClick={handleLogout}
-            className="text-xs text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors cursor-pointer font-medium"
+            className="text-sm text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors cursor-pointer font-medium"
           >
             🚪 Keluar
           </button>

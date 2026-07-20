@@ -85,7 +85,7 @@ function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-xl border border-slate-200 bg-white/95 px-4 py-3 shadow-xl backdrop-blur-sm">
-      <p className="mb-1.5 text-xs font-bold text-slate-700">{label}</p>
+      <p className="mb-1.5 text-sm font-bold text-slate-700">{label}</p>
       {payload.map((entry: any) => (
         <div key={entry.name} className="flex items-center gap-2 text-[11px]">
           <span
@@ -128,7 +128,7 @@ export default function EkskulAnalytics() {
             <h3 className="card-title text-sm text-slate-900">
               Analitik Ekstrakurikuler
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               Visualisasi data kehadiran, sebaran anggota, dan capaian nilai
             </p>
           </div>
@@ -302,7 +302,7 @@ export default function EkskulAnalytics() {
                 {/* ── Legend Manual ── */}
                 <div className="mt-4 flex flex-wrap justify-center gap-3 sm:mt-0 sm:flex-col sm:justify-center sm:pl-6">
                   {DUMMY_NILAI.map((item, idx) => (
-                    <div key={item.nama} className="flex items-center gap-2 text-xs">
+                    <div key={item.nama} className="flex items-center gap-2 text-sm">
                       <span
                         className="inline-block size-3 rounded-full"
                         style={{ backgroundColor: WARNA_PIE[idx % WARNA_PIE.length] }}
