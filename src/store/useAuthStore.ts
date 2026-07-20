@@ -31,6 +31,7 @@ export type RoleView =
   | 'guru_piket'
   | 'guru_bk'
   | 'kurikulum'
+  | 'kepala_sekolah'
   | null;
 
 /* ─── Store Interface ─── */
@@ -72,6 +73,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
 /* ─── Selector Helpers (optional, for derived booleans) ─── */
 
 export const selectIsAdmin = (s: AuthStore) => s.user?.role === 'admin';
+export const selectIsKepsek = (s: AuthStore) => s.user?.role === 'kepala_sekolah';
 export const selectIsKurikulum = (s: AuthStore) => s.user?.role === 'kurikulum';
 export const selectIsPiket = (s: AuthStore) =>
   s.user?.role === 'guru_piket' ||

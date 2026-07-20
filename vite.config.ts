@@ -25,6 +25,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       devOptions: {
         enabled: true,
+        type: 'classic',
+        navigateFallback: '/index.html',
       },
       includeAssets: [
         'icons/icon-192.png',
@@ -32,10 +34,11 @@ export default defineConfig({
       ],
       manifest: {
         id: '/',
+        scope: '/',
         name: 'SIGAP SPENSAWA',
         short_name: 'SIGAP',
         description: 'Sistem Informasi Penilaian & Agenda Guru SPENSAWA',
-        start_url: '.',
+        start_url: '/',
         display: 'standalone',
         display_override: ['window-controls-overlay', 'standalone'],
         background_color: '#f1f6fc',

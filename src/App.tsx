@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "./supabaseClient";
 import { addToOfflineQueue } from "./utils/dbLocal";
-import { useAuthStore, selectIsAdmin, selectIsKurikulum, selectIsPiket, selectIsGureBK } from "./store/useAuthStore";
+import { useAuthStore, selectIsAdmin, selectIsKepsek, selectIsKurikulum, selectIsPiket, selectIsGureBK } from "./store/useAuthStore";
 import type { MapelEntry, UserProfile, RoleView } from "./store/useAuthStore";
 import Login from "./components/Login";
 import DashboardMenu from "./components/DashboardMenu";
@@ -18,6 +18,7 @@ import GuruPiketDashboard from "./components/GuruPiketDashboard";
 import GuruBKDashboard from "./components/GuruBKDashboard";
 import PembinaEkskulDashboard from "./components/PembinaEkskulDashboard";
 import KurikulumPortal from "./components/KurikulumPortal";
+import KepsekPortal from "./components/KepsekPortal";
 import RoleSwitcher from "./components/RoleSwitcher";
 
 interface Siswa {
@@ -56,6 +57,17 @@ export default function App() {
   const [loadingSiswa, setLoadingSiswa] = useState(false);
   const [loadingSimpan, setLoadingSimpan] = useState(false);
   const [pesanEror, setPesanEror] = useState("");
+
+  // PWA Install Debug
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      console.log('✅ beforeinstallprompt FIRED — PWA can be installed!');
+      (window as any).__deferredPrompt = e;
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
   const [dataBk, setDataBk] = useState<any[]>([]);
   const [loadingBk, setLoadingBk] = useState(false);
   const [guruMapelList, setGuruMapelList] = useState<MapelEntry[]>([]);
@@ -69,6 +81,7 @@ export default function App() {
   const setOnlineStatus = useAuthStore((s) => s.setOnlineStatus);
   const logout = useAuthStore((s) => s.logout);
   const isAdmin = useAuthStore(selectIsAdmin);
+  const isKepsek = useAuthStore(selectIsKepsek);
   const isKurikulum = useAuthStore(selectIsKurikulum);
   const isPiket = useAuthStore(selectIsPiket);
   const isGureBK = useAuthStore(selectIsGureBK);
@@ -225,6 +238,13 @@ export default function App() {
         return;
       }
 
+      if (userData.role === "kepala_sekolah") {
+        setActiveRoleView(null);
+        setSubMenu(null);
+        setSubMenuWali(null);
+        return;
+      }
+
       const cekMapel = profilTarik.mapel ? String(profilTarik.mapel).trim() : "";
       const cekEkskul = profilTarik.nama_ekstrakurikuler ? String(profilTarik.nama_ekstrakurikuler).trim() : "";
       const isWali = profilTarik.is_wali_kelas === true || String(profilTarik.is_wali_kelas).toLowerCase() === "true";
@@ -233,8 +253,9 @@ export default function App() {
       const isAkunKhususPiket = userData.role === "guru_piket";
       const isAkunKhususBK = userData.role === "guru_bk";
       const isAkunKhususKurikulum = userData.role === "kurikulum";
+      const isAkunKhususKepsek = userData.role === "kepala_sekolah";
 
-      if (belumAdaTugasSamaSekali && !isAkunKhususPiket && !isAkunKhususBK && !isAkunKhususKurikulum) {
+      if (belumAdaTugasSamaSekali && !isAkunKhususPiket && !isAkunKhususBK && !isAkunKhususKurikulum && !isAkunKhususKepsek) {
         setPerluKonfirmasi(true);
       } else {
         setPerluKonfirmasi(false);
@@ -342,6 +363,7 @@ export default function App() {
 
   if (!isLoggedIn) return <Login username={username} setUsername={setUsername} password={password} setPassword={setPassword} handleLogin={handleLogin} pesanEror={pesanEror} />;
   if (isAdmin) return <AdminPortal handleLogout={handleLogout} daftarKelas={daftarKelas} />;
+  if (isKepsek) return <KepsekPortal onSwitchRole={handleLogout} />;
   
   // ── Kurikulum: role selection screen ──
   if (isKurikulum && kurikulumPanel === null) {

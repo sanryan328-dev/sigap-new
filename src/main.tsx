@@ -5,7 +5,7 @@ import './index.css'
 import App from './App.tsx'
 import { registerSW } from 'virtual:pwa-register'
 
-registerSW({
+const updateSW = registerSW({
   onNeedRefresh() {
     if (confirm('Pembaruan tersedia. Muat ulang halaman?')) {
       window.location.reload();
@@ -13,6 +13,13 @@ registerSW({
   },
   onOfflineReady() {
     console.log('✅ SIGAP siap digunakan secara offline.');
+    document.body.setAttribute('data-pwa-ready', 'true');
+  },
+  onRegisteredSW(swUrl, registration) {
+    console.log('✅ Service Worker terdaftar:', swUrl, registration?.scope);
+  },
+  onRegisterError(error) {
+    console.error('❌ Gagal mendaftarkan Service Worker:', error);
   },
 });
 
