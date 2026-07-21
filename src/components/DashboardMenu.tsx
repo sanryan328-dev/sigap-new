@@ -24,7 +24,7 @@ import ModalUnduh from './ModalUnduh';
 import OnlineStatus from './OnlineStatus';
 import FormPengajuanIzin from './FormPengajuanIzin';
 import { useAuthStore, selectIsPiket, selectIsGureBK } from '../store/useAuthStore';
-import type { MapelEntry } from '../store/useAuthStore';
+import type { AuthUser, MapelEntry } from '../store/useAuthStore';
 import { useOfflineSync } from '../hooks/useOfflineSync';
 import { toast } from 'sonner';
 
@@ -41,6 +41,7 @@ const cardHover = {
 
 export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKelas = [] }: DashboardMenuProps) {
   const profile = useAuthStore((s) => s.profile);
+  const user = useAuthStore((s) => s.user);
   const isPiket = useAuthStore(selectIsPiket);
   const isGureBK = useAuthStore(selectIsGureBK);
   const [loadingDownload, setLoadingDownload] = useState(false);
@@ -172,7 +173,7 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
   };
 
   const handleDownload = async (
-    jenis: 'jurnal' | 'nilai' | 'bk' | 'ekskul_jurnal' | 'ekskul_anggota' | 'ekskul_nilai',
+    jenis: 'jurnal' | 'nilai' | 'bk' | 'ekskul_jurnal' | 'ekskul_anggota' | 'ekskul_nilai' | 'rekap_jurnal_all' | 'rekap_kehadiran_all',
     filters?: { bulan?: string; kelas?: string; mapel?: string },
   ) => {
     if (!profile) return;
@@ -332,6 +333,63 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
           'Deskripsi Catatan Kemajuan': d.deskripsi_kemajuan || '-',
         }));
         fileName = `Rekap_Nilai_Ekskul_${profile.nama_ekstrakurikuler}`;
+      } else if (jenis === 'rekap_jurnal_all') {
+        let q = supabase.from('teaching_journals').select('*, profiles!inner(user_id, nama_lengkap)');
+        if (range.gte) q = q.gte('created_at', range.gte).lte('created_at', range.lte);
+        const { data, error } = await q.order('created_at', { ascending: false });
+        if (error) throw error;
+        dataToExport = (data ?? []).map((d: any, idx: number) => ({
+          'No': idx + 1,
+          'Tanggal': d.created_at ? new Date(d.created_at).toLocaleDateString('id-ID') : '-',
+          'Guru': d.profiles?.nama_lengkap || `(user_id: ${d.user_id})`,
+          'Kelas': d.kelas,
+          'Mata Pelajaran': d.mata_pelajaran,
+          'Jam Ke': d.jam_ke,
+          'Materi': d.materi_pembelajaran,
+          'Catatan': d.catatan_kelas || '-',
+        }));
+        fileName = 'Rekap_Jurnal_Seluruh_Guru';
+
+      } else if (jenis === 'rekap_kehadiran_all') {
+        let qJ = supabase.from('teaching_journals').select('id, kelas, mata_pelajaran, jam_ke, created_at, profiles!inner(user_id, nama_lengkap)');
+        if (range.gte) qJ = qJ.gte('created_at', range.gte).lte('created_at', range.lte);
+        const { data: journals, error: eJ } = await qJ.order('created_at', { ascending: false });
+        if (eJ) throw eJ;
+        if (!journals?.length) {
+          toast.error('Belum ada data jurnal untuk periode ini.');
+          return;
+        }
+        const jIds = journals.map((j: any) => j.id);
+        const { data: att, error: eA } = await supabase
+          .from('student_attendances')
+          .select('teaching_journal_id, student_id, status');
+        if (eA) throw eA;
+        const attMap = new Map<number, { h: number; s: number; i: number; a: number }>();
+        (att ?? []).forEach((a: any) => {
+          const tid = a.teaching_journal_id;
+          if (!attMap.has(tid)) attMap.set(tid, { h: 0, s: 0, i: 0, a: 0 });
+          const m = attMap.get(tid)!;
+          if (a.status === 'Hadir') m.h++;
+          else if (a.status === 'Sakit') m.s++;
+          else if (a.status === 'Izin') m.i++;
+          else m.a++;
+        });
+        dataToExport = journals.map((j: any, idx: number) => {
+          const s = attMap.get(j.id) || { h: 0, s: 0, i: 0, a: 0 };
+          return {
+            'No': idx + 1,
+            'Tanggal': j.created_at ? new Date(j.created_at).toLocaleDateString('id-ID') : '-',
+            'Guru': j.profiles?.nama_lengkap || `(user_id: ${j.user_id})`,
+            'Kelas': j.kelas,
+            'Mapel': j.mata_pelajaran,
+            'Jam': j.jam_ke,
+            'Hadir': s.h,
+            'Sakit': s.s,
+            'Izin': s.i,
+            'Alfa': s.a,
+          };
+        });
+        fileName = 'Rekap_Kehadiran_Siswa_Keseluruhan';
       }
 
       if (dataToExport.length === 0) {
@@ -689,6 +747,42 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
                   >
                     <Star className="size-4" />
                     Nilai Kualitatif
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Kelompok Kurikulum / Kesiswaan ── */}
+            {(user?.role === 'kurikulum' || user?.role === 'admin' || user?.role === 'kepala_sekolah') && (
+              <div className="space-y-2" style={{ color: '#1d1601' }}>
+                <h4
+                  className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider"
+                  style={{ color: '#1d1601' }}
+                >
+                  <BarChart3 className="size-3.5" />
+                  Kelompok Kurikulum / Kesiswaan
+                </h4>
+                <div
+                  className="grid grid-cols-2 gap-2 sm:grid-cols-3 p-4 rounded-xl border"
+                  style={{ backgroundColor: '#fefaef', borderColor: '#f4aa18' }}
+                >
+                  <button
+                    onClick={() => handleDownload('rekap_jurnal_all')}
+                    disabled={loadingDownload}
+                    className="px-3 py-3 rounded-lg text-sm font-semibold cursor-pointer disabled:opacity-50 text-center"
+                    style={{ backgroundColor: '#f4aa18', color: '#1d1601' }}
+                  >
+                    <ScrollText className="size-4 inline-block mr-1.5" />
+                    Rekap Jurnal Seluruh Guru
+                  </button>
+                  <button
+                    onClick={() => handleDownload('rekap_kehadiran_all')}
+                    disabled={loadingDownload}
+                    className="px-3 py-3 rounded-lg text-sm font-semibold cursor-pointer disabled:opacity-50 text-center"
+                    style={{ backgroundColor: '#f4aa18', color: '#1d1601' }}
+                  >
+                    <Users className="size-4 inline-block mr-1.5" />
+                    Rekap Kehadiran Siswa
                   </button>
                 </div>
               </div>

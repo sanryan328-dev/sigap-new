@@ -11,6 +11,8 @@ import WaliKelasDashboard from "./components/WaliKelasDashboard";
 import KehadiranWali from "./components/KehadiranWali";
 import FormJurnal from "./components/FormJurnal";
 import InputNilai from "./components/InputNilai";
+import RiwayatNilai from "./components/RiwayatNilai";
+import RiwayatJurnal from "./components/RiwayatJurnal";
 import RekapBKWali from "./components/RekapBKWali";
 import KonfirmasiProfil from "./components/KonfirmasiProfil";
 import AdminPortal from "./components/AdminPortal";
@@ -38,7 +40,7 @@ export default function App() {
   
   const [kurikulumPanel, setKurikulumPanel] = useState<'kurikulum' | 'wali_kelas' | 'pembina_ekskul' | 'guru_piket' | 'guru_mapel' | null>(null);
   
-  const [subMenu, setSubMenu] = useState<"jurnal" | "nilai" | null>(null);
+  const [subMenu, setSubMenu] = useState<"jurnal" | "nilai" | "riwayat-nilai" | "riwayat-jurnal" | null>(null);
   const [subMenuWali, setSubMenuWali] = useState<"kehadiran" | "bk" | null>(null);
 
   const [perluKonfirmasi, setPerluKonfirmasi] = useState(false);
@@ -421,7 +423,7 @@ export default function App() {
       const payloadJurnal = {
         user_id: profile.user_id, kelas, mata_pelajaran: mataPelajaran, jam_ke: formatJamKe,
         materi_pembelajaran: materi, catatan_kelas: catatan ? `[Role: ${activeRoleView}] ${catatan}` : `[Role: ${activeRoleView}]`,
-        daftar_siswa: daftarSiswa.map((siswa) => ({ student_id: siswa.id, status: presensi[siswa.id] || "Hadir" })),
+        daftar_siswa: daftarSiswa.map((siswa) => ({ student_id: siswa.id, status: presensi[siswa.id] || "Hadir", status_verifikasi: "pending" })),
       };
       await addToOfflineQueue(profile.user_id, 'teaching_journals', payloadJurnal);
       toast.success("Data disimpan secara offline. Akan dikirim saat online kembali.");
@@ -439,9 +441,19 @@ export default function App() {
         }]).select().single();
       if (errorJurnal) throw errorJurnal;
       if (jurnalBaru) {
-        const dataAbsenSiswa = daftarSiswa.map((siswa) => ({ teaching_journal_id: jurnalBaru.id, student_id: siswa.id, status: presensi[siswa.id] || "Hadir" }));
+        const dataAbsenSiswa = daftarSiswa.map((siswa) => ({ teaching_journal_id: jurnalBaru.id, student_id: siswa.id, status: presensi[siswa.id] || "Hadir", status_verifikasi: "pending" }));
         const { error: errorAbsensi } = await supabase.from('student_attendances').insert(dataAbsenSiswa);
-        if (errorAbsensi) throw errorAbsensi;
+        if (errorAbsensi) {
+          /* Coba ulang tanpa status_verifikasi jika kolom belum ada */
+          if (errorAbsensi.message?.includes('status_verifikasi') || errorAbsensi.code === '42703') {
+            console.warn('⚠️ Kolom status_verifikasi belum ada — insert tanpa kolom tersebut');
+            const dataFallback = daftarSiswa.map((siswa) => ({ teaching_journal_id: jurnalBaru.id, student_id: siswa.id, status: presensi[siswa.id] || "Hadir" }));
+            const { error: e2 } = await supabase.from('student_attendances').insert(dataFallback);
+            if (e2) throw e2;
+          } else {
+            throw errorAbsensi;
+          }
+        }
       }
       toast.success("Sukses! Data Jurnal berhasil disimpan.");
       setMateri(""); setCatatan("");
@@ -568,6 +580,8 @@ export default function App() {
     if (activeRoleView === 'guru_mapel') {
       if (subMenu === null) return <GuruMapelDashboard setSubMenu={setSubMenu} setCurrentRole={backToSwitcher} onSelectMapelKelas={handleSelectMapelKelas} mataPelajaranData={guruMapelList} daftarKelas={daftarKelas} onSwitchRole={backToSwitcher} />;
       if (subMenu === 'nilai') return <InputNilai setSubMenu={setSubMenu} kelas={kelas} setKelas={setKelas} mataPelajaran={mataPelajaran} daftarKelas={daftarKelas} daftarSiswa={daftarSiswa} handleSimpanNilai={handleSimpanNilai} loadingSiswa={loadingSiswa} loadingSimpan={loadingSimpan} />;
+      if (subMenu === 'riwayat-nilai') return <RiwayatNilai setSubMenu={setSubMenu} kelas={kelas} mataPelajaran={mataPelajaran} />;
+      if (subMenu === 'riwayat-jurnal') return <RiwayatJurnal setSubMenu={setSubMenu} kelas={kelas} mataPelajaran={mataPelajaran} />;
       return <FormJurnal currentRole={activeRoleView} setSubMenu={handleBackFromJurnal} kelas={kelas} setKelas={setKelas} mataPelajaran={mataPelajaran} setMataPelajaran={setMataPelajaran} jamMulai={jamMulai} setJamMulai={setJamMulai} durasiJam={durasiJam} setDurasiJam={setDurasiJam} materi={materi} setMateri={setMateri} catatan={catatan} setCatatan={setCatatan} daftarKelas={daftarKelas} daftarSiswa={daftarSiswa} presensi={presensi} handleStatusChange={handleStatusChange} handleSubmitJurnal={handleSubmitJurnal} loadingSiswa={loadingSiswa} loadingSimpan={loadingSimpan} errorJadwal={errorJadwal} />;
     }
   }
@@ -600,6 +614,8 @@ export default function App() {
   if (activeRoleView === "guru_mapel") {
     if (subMenu === null) return <GuruMapelDashboard setSubMenu={setSubMenu} setCurrentRole={setActiveRoleView} onSelectMapelKelas={handleSelectMapelKelas} mataPelajaranData={guruMapelList} daftarKelas={daftarKelas} />;
     if (subMenu === "nilai") return <InputNilai setSubMenu={setSubMenu} kelas={kelas} setKelas={setKelas} mataPelajaran={mataPelajaran} daftarKelas={daftarKelas} daftarSiswa={daftarSiswa} handleSimpanNilai={handleSimpanNilai} loadingSiswa={loadingSiswa} loadingSimpan={loadingSimpan} />;
+    if (subMenu === "riwayat-nilai") return <RiwayatNilai setSubMenu={setSubMenu} kelas={kelas} mataPelajaran={mataPelajaran} />;
+    if (subMenu === "riwayat-jurnal") return <RiwayatJurnal setSubMenu={setSubMenu} kelas={kelas} mataPelajaran={mataPelajaran} />;
   }
 
   if (activeRoleView === "wali_kelas") {

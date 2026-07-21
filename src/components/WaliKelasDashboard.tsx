@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { ClipboardList, BookOpen, LogOut, Repeat } from 'lucide-react';
 import GrafikPresensi from './GrafikPresensi';
+import VerifikasiPresensi from './VerifikasiPresensi';
 import { useAuthStore } from '../store/useAuthStore';
 
 interface WaliKelasDashboardProps {
@@ -73,6 +74,9 @@ export default function WaliKelasDashboard({ setSubMenuWali, setCurrentRole, onS
             <GrafikPresensi />
           </div>
         </motion.div>
+
+        {/* ── Verifikasi Presensi ── */}
+        <VerifikasiPresensi />
 
         {/* ── Grid Menu ── */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, ClipboardCheck, LogOut, ChevronDown, Repeat } from 'lucide-react';
+import { BookOpen, ClipboardCheck, LogOut, ChevronDown, Repeat, History } from 'lucide-react';
 import GrafikNilai from './GrafikNilai';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -10,7 +10,7 @@ interface MapelKelas {
 }
 
 interface GuruMapelDashboardProps {
-  setSubMenu: (menu: 'jurnal' | 'nilai' | null) => void;
+  setSubMenu: (menu: 'jurnal' | 'nilai' | 'riwayat-nilai' | 'riwayat-jurnal' | null) => void;
   setCurrentRole: (role: any) => void;
   onSelectMapelKelas: (mapel: string, kelas: string) => void;
   mataPelajaranData: MapelKelas[];
@@ -180,6 +180,38 @@ export default function GuruMapelDashboard({
                 <h3 className="card-title text-sm text-slate-900">Input Nilai Siswa</h3>
                 <p className="text-sm leading-relaxed text-slate-500">
                   Rekap angka nilai berkala seperti Tugas, Ulangan Harian, UTS, dan UAS.
+                </p>
+              </div>
+            </motion.button>
+
+            <motion.button
+              {...cardHover}
+              onClick={() => handleMasuk('riwayat-nilai')}
+              className="card border border-sky-200/60 bg-white shadow-lg transition-shadow duration-200 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-sky-500 cursor-pointer"
+            >
+              <div className="card-body gap-3 text-left">
+                <div className="flex size-11 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 text-white shadow-sm ring-1 ring-sky-500/20">
+                  <ClipboardCheck className="size-5" />
+                </div>
+                <h3 className="card-title text-sm text-slate-900">Riwayat & Manajemen Penilaian</h3>
+                <p className="text-sm leading-relaxed text-slate-500">
+                  Lihat, edit, atau hapus nilai yang sudah diinput untuk kelas {selectedKelas}.
+                </p>
+              </div>
+            </motion.button>
+
+            <motion.button
+              {...cardHover}
+              onClick={() => handleMasuk('riwayat-jurnal')}
+              className="card border border-orange-200/60 bg-white shadow-lg transition-shadow duration-200 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-orange-500 cursor-pointer"
+            >
+              <div className="card-body gap-3 text-left">
+                <div className="flex size-11 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-sm ring-1 ring-orange-500/20">
+                  <History className="size-5" />
+                </div>
+                <h3 className="card-title text-sm text-slate-900">Riwayat Jurnal Mengajar</h3>
+                <p className="text-sm leading-relaxed text-slate-500">
+                  Pantau dan edit jurnal yang pernah diinput untuk kelas {selectedKelas}.
                 </p>
               </div>
             </motion.button>
