@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "./supabaseClient";
 import { addToOfflineQueue } from "./utils/dbLocal";
+import { saveAccount } from "./utils/savedAccounts";
 import { useAuthStore, selectIsAdmin, selectIsKepsek, selectIsKurikulum, selectIsPiket, selectIsGureBK } from "./store/useAuthStore";
 import type { AuthUser, MapelEntry, UserProfile, RoleView } from "./store/useAuthStore";
 import Login from "./components/Login";
@@ -369,6 +370,14 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    /* Simpan username sebelum logout */
+    if (user) {
+      saveAccount({
+        username: user.username,
+        nama_lengkap: profile?.nama_lengkap || user.username,
+        role: user.role === 'admin' ? 'Admin' : user.role,
+      });
+    }
     logout();
     localStorage.removeItem('sigap_session');
     setKurikulumPanel(null);
