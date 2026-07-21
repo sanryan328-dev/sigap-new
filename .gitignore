@@ -23,4 +23,3 @@ public/icons/
 *.njsproj
 *.sln
 *.sw?
-src/utils/savedAccounts.ts
