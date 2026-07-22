@@ -241,13 +241,15 @@ export default function App() {
         try {
           const { data } = await supabase
             .from("bk_records")
-            .select(`id, kategori_kasus, detail_kasus, tindakan_penanganan, status, created_at, students!inner(nama_siswa)`)
+            .select(`id, kategori_kasus, detail_kasus, tindakan_penanganan, status, created_at, student_id`)
             .eq("kelas", profile.kelas_wali);
           if (data) {
+            const { data: studentsData } = await supabase.from('students').select('id, nama_siswa');
+            const studentMap = new Map((studentsData || []).map(s => [s.id, s.nama_siswa]));
             const cleanData = data.map((item: any) => ({
               id: item.id, kategori_kasus: item.kategori_kasus, detail_kasus: item.detail_kasus,
               tindakan_penanganan: item.tindakan_penanganan, status: item.status, created_at: item.created_at,
-              student_name: item.students?.nama_siswa || "Siswa Hilang",
+              student_name: studentMap.get(item.student_id) || "Siswa Hilang",
             }));
             setDataBk(cleanData);
           }

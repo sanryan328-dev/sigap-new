@@ -45,8 +45,11 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
   const [bkNotifications, setBkNotifications] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchDataMaster();
-    fetchBkNotification();
+    const init = async () => {
+      await fetchDataMaster();
+      fetchBkNotification();
+    };
+    init();
   }, []);
 
   useEffect(() => {
@@ -56,7 +59,7 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
     if (subMenuPiket === 'radar_piket') {
       fetchRadarHarian();
     }
-  }, [subMenuPiket, listProfiles, listStudents]);
+  }, [subMenuPiket]);
 
   // ==========================================
   // 📥 FETCH DATA MASTER (Untuk Pencocokan Nama)
@@ -77,10 +80,17 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
       const todayStr = new Date().toISOString().split('T')[0];
       const { data } = await supabase
         .from('teacher_absences')
-        .select('*, profiles(nama_lengkap)')
+        .select('*')
         .eq('tanggal_absen', todayStr)
         .ilike('alasan_detail', 'NOTIFIKASI: Sedang Menangani Kasus%');
-      setBkNotifications(data || []);
+      const profiles = listProfiles.length > 0
+        ? listProfiles
+        : (await supabase.from('profiles').select('user_id, nama_lengkap')).data || [];
+      const withNames = (data || []).map(a => ({
+        ...a,
+        profiles: profiles.find(p => p.user_id === a.user_id) || null
+      }));
+      setBkNotifications(withNames);
     } catch (err) {
       console.error('Gagal memuat notifikasi BK:', err);
     }
@@ -94,11 +104,18 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
     try {
       const { data, error } = await supabase
         .from('teacher_absences')
-        .select('*, profiles(nama_lengkap)')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setListAbsenGuru(data || []);
+      const profiles = listProfiles.length > 0
+        ? listProfiles
+        : (await supabase.from('profiles').select('user_id, nama_lengkap')).data || [];
+      const withNames = (data || []).map(a => ({
+        ...a,
+        profiles: profiles.find(p => p.user_id === a.user_id) || null
+      }));
+      setListAbsenGuru(withNames || []);
     } catch (err: any) {
       console.error("Gagal memuat izin guru:", err.message);
     } finally {

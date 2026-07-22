@@ -311,37 +311,49 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
         fileName = `Rekap_Jurnal_Ekskul_${profile.nama_ekstrakurikuler}`;
 
       } else if (jenis === 'ekskul_anggota') {
-        const { data, error } = await supabase.from('student_ekskul').select('*, students(nama_siswa, kelas, nisn)').eq('nama_ekskul', profile.nama_ekstrakurikuler);
+        const { data, error } = await supabase.from('student_ekskul').select('*').eq('nama_ekskul', profile.nama_ekstrakurikuler);
         if (error) throw error;
-        dataToExport = data.map((d: any) => ({
-          'Nama Siswa': d.students?.nama_siswa,
-          'Kelas Rombel': d.students?.kelas,
-          'NISN': d.students?.nisn,
-          'Nama Ekstrakurikuler': d.nama_ekskul,
-          'Tanggal Bergabung': d.created_at ? new Date(d.created_at).toLocaleDateString('id-ID') : '-',
-        }));
+        const { data: studentsData } = await supabase.from('students').select('id, nama_siswa, kelas, nisn');
+        const studentMap = new Map((studentsData || []).map(s => [s.id, s]));
+        dataToExport = data.map((d: any) => {
+          const s = studentMap.get(d.student_id);
+          return {
+            'Nama Siswa': s?.nama_siswa || '-',
+            'Kelas Rombel': s?.kelas || '-',
+            'NISN': s?.nisn || '-',
+            'Nama Ekstrakurikuler': d.nama_ekskul,
+            'Tanggal Bergabung': d.created_at ? new Date(d.created_at).toLocaleDateString('id-ID') : '-',
+          };
+        });
         fileName = `Daftar_Anggota_Ekskul_${profile.nama_ekstrakurikuler}`;
 
       } else if (jenis === 'ekskul_nilai') {
-        const { data, error } = await supabase.from('student_ekskul').select('*, students(nama_siswa, kelas, nisn)').eq('nama_ekskul', profile.nama_ekstrakurikuler);
+        const { data, error } = await supabase.from('student_ekskul').select('*').eq('nama_ekskul', profile.nama_ekstrakurikuler);
         if (error) throw error;
-        dataToExport = data.map((d: any) => ({
-          'Nama Siswa': d.students?.nama_siswa,
-          'Kelas': d.students?.kelas,
-          'NISN': d.students?.nisn,
-          'Nilai Kualitatif': d.nilai_kualitatif || 'Belum Dinilai',
-          'Deskripsi Catatan Kemajuan': d.deskripsi_kemajuan || '-',
-        }));
+        const { data: studentsData } = await supabase.from('students').select('id, nama_siswa, kelas, nisn');
+        const studentMap = new Map((studentsData || []).map(s => [s.id, s]));
+        dataToExport = data.map((d: any) => {
+          const s = studentMap.get(d.student_id);
+          return {
+            'Nama Siswa': s?.nama_siswa || '-',
+            'Kelas': s?.kelas || '-',
+            'NISN': s?.nisn || '-',
+            'Nilai Kualitatif': d.nilai_kualitatif || 'Belum Dinilai',
+            'Deskripsi Catatan Kemajuan': d.deskripsi_kemajuan || '-',
+          };
+        });
         fileName = `Rekap_Nilai_Ekskul_${profile.nama_ekstrakurikuler}`;
       } else if (jenis === 'rekap_jurnal_all') {
-        let q = supabase.from('teaching_journals').select('*, profiles!inner(user_id, nama_lengkap)');
+        let q = supabase.from('teaching_journals').select('*');
         if (range.gte) q = q.gte('created_at', range.gte).lte('created_at', range.lte);
         const { data, error } = await q.order('created_at', { ascending: false });
         if (error) throw error;
+        const { data: profiles } = await supabase.from('profiles').select('user_id, nama_lengkap');
+        const profileMap = new Map((profiles || []).map(p => [p.user_id, p.nama_lengkap]));
         dataToExport = (data ?? []).map((d: any, idx: number) => ({
           'No': idx + 1,
           'Tanggal': d.created_at ? new Date(d.created_at).toLocaleDateString('id-ID') : '-',
-          'Guru': d.profiles?.nama_lengkap || `(user_id: ${d.user_id})`,
+          'Guru': profileMap.get(d.user_id) || `(user_id: ${d.user_id})`,
           'Kelas': d.kelas,
           'Mata Pelajaran': d.mata_pelajaran,
           'Jam Ke': d.jam_ke,
@@ -351,7 +363,7 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
         fileName = 'Rekap_Jurnal_Seluruh_Guru';
 
       } else if (jenis === 'rekap_kehadiran_all') {
-        let qJ = supabase.from('teaching_journals').select('id, kelas, mata_pelajaran, jam_ke, created_at, profiles!inner(user_id, nama_lengkap)');
+        let qJ = supabase.from('teaching_journals').select('id, kelas, mata_pelajaran, jam_ke, created_at');
         if (range.gte) qJ = qJ.gte('created_at', range.gte).lte('created_at', range.lte);
         const { data: journals, error: eJ } = await qJ.order('created_at', { ascending: false });
         if (eJ) throw eJ;
@@ -359,6 +371,8 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
           toast.error('Belum ada data jurnal untuk periode ini.');
           return;
         }
+        const { data: profiles } = await supabase.from('profiles').select('user_id, nama_lengkap');
+        const profileMap = new Map((profiles || []).map(p => [p.user_id, p.nama_lengkap]));
         const jIds = journals.map((j: any) => j.id);
         const { data: att, error: eA } = await supabase
           .from('student_attendances')
@@ -379,7 +393,7 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
           return {
             'No': idx + 1,
             'Tanggal': j.created_at ? new Date(j.created_at).toLocaleDateString('id-ID') : '-',
-            'Guru': j.profiles?.nama_lengkap || `(user_id: ${j.user_id})`,
+            'Guru': profileMap.get(j.user_id) || `(user_id: ${j.user_id})`,
             'Kelas': j.kelas,
             'Mapel': j.mata_pelajaran,
             'Jam': j.jam_ke,

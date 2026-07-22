@@ -63,12 +63,18 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
     setLoading(true);
     const { data, error } = await supabase
       .from('student_ekskul')
-      .select('*, students(nama_siswa, kelas, nisn)')
+      .select('*')
       .eq('nama_ekskul', profile.nama_ekstrakurikuler);
     if (!error && data) {
-      setAnggotaEkskul(data);
+      const { data: studentsData } = await supabase.from('students').select('id, nama_siswa, kelas, nisn');
+      const studentMap = new Map((studentsData || []).map(s => [s.id, s]));
+      const merged = data.map(item => ({
+        ...item,
+        students: studentMap.get(item.student_id) || null
+      }));
+      setAnggotaEkskul(merged);
       const defaultAbsen: any = {};
-      data.forEach((item: any) => {
+      merged.forEach((item: any) => {
         defaultAbsen[item.student_id] = 'Hadir';
       });
       setAbsensiEkskul(defaultAbsen);

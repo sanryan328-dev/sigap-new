@@ -30,13 +30,19 @@ export default function FormNilaiEkskul({ profile, onBack }: FormNilaiEkskulProp
     try {
       const { data, error } = await supabase
         .from('student_ekskul')
-        .select('*, students(nama_siswa, kelas, nisn)')
+        .select('*')
         .eq('nama_ekskul', profile.nama_ekstrakurikuler);
       if (error) throw error;
       if (data) {
-        setAnggota(data);
+        const { data: studentsData } = await supabase.from('students').select('id, nama_siswa, kelas, nisn');
+        const studentMap = new Map((studentsData || []).map(s => [s.id, s]));
+        const merged = data.map(a => ({
+          ...a,
+          students: studentMap.get(a.student_id) || null
+        }));
+        setAnggota(merged);
         const init: Record<string, { grade: string; description: string }> = {};
-        data.forEach((a: any) => {
+        merged.forEach((a: any) => {
           init[a.student_id] = {
             grade: a.nilai_kualitatif || 'B',
             description: a.deskripsi_kemajuan || '',

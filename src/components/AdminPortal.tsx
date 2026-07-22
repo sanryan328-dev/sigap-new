@@ -334,11 +334,13 @@ export default function AdminPortal({ handleLogout, daftarKelas }: AdminPortalPr
     try {
       const { data: existing } = await supabase
         .from('teaching_schedules')
-        .select('*, profiles!inner(user_id, nama_lengkap)')
+        .select('*')
         .eq('kelas', formJadwal.kelas)
         .eq('hari', formJadwal.hari);
 
       if (existing) {
+        const { data: profiles } = await supabase.from('profiles').select('user_id, nama_lengkap');
+        const profileMap = new Map((profiles || []).map(p => [p.user_id, p.nama_lengkap]));
         const bentrok = existing.find((s: any) => {
           if (s.user_id === userIdNum) return false;
           const sMulai = s.jam_mulai;
@@ -346,7 +348,7 @@ export default function AdminPortal({ handleLogout, daftarKelas }: AdminPortalPr
           return (jamMulaiNum <= sAkhir) && (jamSelesaiNum >= sMulai);
         });
         if (bentrok) {
-          const namaGuru = bentrok.profiles?.nama_lengkap || `(user_id: ${bentrok.user_id})`;
+          const namaGuru = profileMap.get(bentrok.user_id) || `(user_id: ${bentrok.user_id})`;
           setPesanJadwal({
             type: 'error',
             text: `Jadwal bentrok dengan ${namaGuru} di kelas ${formJadwal.kelas} pada hari ${formJadwal.hari}!`,
