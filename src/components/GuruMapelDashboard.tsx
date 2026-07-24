@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, ClipboardCheck, LogOut, ChevronDown, Repeat, History } from 'lucide-react';
+import { BookOpen, ClipboardCheck, LogOut, ChevronDown, Repeat, History, BarChart3 } from 'lucide-react';
 import GrafikNilai from './GrafikNilai';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -9,8 +9,10 @@ interface MapelKelas {
   kelas: string[];
 }
 
+type SubMenuGuruMapel = 'jurnal' | 'nilai' | 'riwayat-nilai' | 'riwayat-jurnal' | 'rekap-kehadiran' | null;
+
 interface GuruMapelDashboardProps {
-  setSubMenu: (menu: 'jurnal' | 'nilai' | 'riwayat-nilai' | 'riwayat-jurnal' | null) => void;
+  setSubMenu: (menu: SubMenuGuruMapel) => void;
   setCurrentRole: (role: any) => void;
   onSelectMapelKelas: (mapel: string, kelas: string) => void;
   mataPelajaranData: MapelKelas[];
@@ -39,7 +41,7 @@ export default function GuruMapelDashboard({
 
   const siap = selectedMapel && selectedKelas;
 
-  const handleMasuk = (menu: 'jurnal' | 'nilai') => {
+  const handleMasuk = (menu: SubMenuGuruMapel) => {
     onSelectMapelKelas(selectedMapel, selectedKelas);
     setSubMenu(menu);
   };
@@ -212,6 +214,22 @@ export default function GuruMapelDashboard({
                 <h3 className="card-title text-sm text-slate-900">Riwayat Jurnal Mengajar</h3>
                 <p className="text-sm leading-relaxed text-slate-500">
                   Pantau dan edit jurnal yang pernah diinput untuk kelas {selectedKelas}.
+                </p>
+              </div>
+            </motion.button>
+
+            <motion.button
+              {...cardHover}
+              onClick={() => handleMasuk('rekap-kehadiran')}
+              className="card border border-indigo-200/60 bg-white shadow-lg transition-shadow duration-200 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-indigo-500 cursor-pointer"
+            >
+              <div className="card-body gap-3 text-left">
+                <div className="flex size-11 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-sm ring-1 ring-indigo-500/20">
+                  <BarChart3 className="size-5" />
+                </div>
+                <h3 className="card-title text-sm text-slate-900">Rekap Kehadiran</h3>
+                <p className="text-sm leading-relaxed text-slate-500">
+                  Lihat rekap kehadiran siswa untuk kelas {selectedKelas}.
                 </p>
               </div>
             </motion.button>

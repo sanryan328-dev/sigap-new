@@ -23,6 +23,7 @@ import PembinaEkskulDashboard from "./components/PembinaEkskulDashboard";
 import KurikulumPortal from "./components/KurikulumPortal";
 import KepsekPortal from "./components/KepsekPortal";
 import RoleSwitcher from "./components/RoleSwitcher";
+import RekapKehadiranGuruMapel from "./components/RekapKehadiranGuruMapel";
 
 interface Siswa {
   id: string;
@@ -41,7 +42,7 @@ export default function App() {
   
   const [kurikulumPanel, setKurikulumPanel] = useState<'kurikulum' | 'wali_kelas' | 'pembina_ekskul' | 'guru_piket' | 'guru_mapel' | null>(null);
   
-  const [subMenu, setSubMenu] = useState<"jurnal" | "nilai" | "riwayat-nilai" | "riwayat-jurnal" | null>(null);
+  const [subMenu, setSubMenu] = useState<"jurnal" | "nilai" | "riwayat-nilai" | "riwayat-jurnal" | "rekap-kehadiran" | null>(null);
   const [subMenuWali, setSubMenuWali] = useState<"kehadiran" | "bk" | null>(null);
 
   const [perluKonfirmasi, setPerluKonfirmasi] = useState(false);
@@ -593,6 +594,7 @@ export default function App() {
       if (subMenu === 'nilai') return <InputNilai setSubMenu={setSubMenu} kelas={kelas} setKelas={setKelas} mataPelajaran={mataPelajaran} daftarKelas={daftarKelas} daftarSiswa={daftarSiswa} handleSimpanNilai={handleSimpanNilai} loadingSiswa={loadingSiswa} loadingSimpan={loadingSimpan} />;
       if (subMenu === 'riwayat-nilai') return <RiwayatNilai setSubMenu={setSubMenu} kelas={kelas} mataPelajaran={mataPelajaran} />;
       if (subMenu === 'riwayat-jurnal') return <RiwayatJurnal setSubMenu={setSubMenu} kelas={kelas} mataPelajaran={mataPelajaran} />;
+      if (subMenu === 'rekap-kehadiran') return <RekapKehadiranGuruMapel onBack={() => setSubMenu(null)} />;
       return <FormJurnal currentRole={activeRoleView} setSubMenu={handleBackFromJurnal} kelas={kelas} setKelas={setKelas} mataPelajaran={mataPelajaran} setMataPelajaran={setMataPelajaran} jamMulai={jamMulai} setJamMulai={setJamMulai} durasiJam={durasiJam} setDurasiJam={setDurasiJam} materi={materi} setMateri={setMateri} catatan={catatan} setCatatan={setCatatan} daftarKelas={daftarKelas} daftarSiswa={daftarSiswa} presensi={presensi} handleStatusChange={handleStatusChange} handleSubmitJurnal={handleSubmitJurnal} loadingSiswa={loadingSiswa} loadingSimpan={loadingSimpan} errorJadwal={errorJadwal} />;
     }
   }
@@ -627,6 +629,7 @@ export default function App() {
     if (subMenu === "nilai") return <InputNilai setSubMenu={setSubMenu} kelas={kelas} setKelas={setKelas} mataPelajaran={mataPelajaran} daftarKelas={daftarKelas} daftarSiswa={daftarSiswa} handleSimpanNilai={handleSimpanNilai} loadingSiswa={loadingSiswa} loadingSimpan={loadingSimpan} />;
     if (subMenu === "riwayat-nilai") return <RiwayatNilai setSubMenu={setSubMenu} kelas={kelas} mataPelajaran={mataPelajaran} />;
     if (subMenu === "riwayat-jurnal") return <RiwayatJurnal setSubMenu={setSubMenu} kelas={kelas} mataPelajaran={mataPelajaran} />;
+    if (subMenu === "rekap-kehadiran") return <RekapKehadiranGuruMapel onBack={() => setSubMenu(null)} />;
   }
 
   if (activeRoleView === "wali_kelas") {

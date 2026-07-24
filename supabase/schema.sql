@@ -91,7 +91,9 @@ CREATE TYPE "public"."role_enum" AS ENUM (
     'wali_kelas',
     'guru_bk',
     'pembina_ekskul',
-    'pks_kesiswaan'
+    'pks_kesiswaan',
+    'kurikulum',
+    'kepala_sekolah'
 );
 
 
@@ -346,7 +348,7 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "is_guru_piket" boolean DEFAULT false NOT NULL,
     "nama_ekstrakurikuler" character varying(255) DEFAULT NULL::character varying,
     "mapel" character varying(255) DEFAULT NULL::character varying,
-    "created_at" timestamp without time zone,
+    "created_at" timestamp without time zone DEFAULT "now"(),
     "updated_at" timestamp without time zone,
     "hari_piket" "text"
 );
@@ -375,8 +377,9 @@ CREATE TABLE IF NOT EXISTS "public"."student_attendances" (
     "teaching_journal_id" bigint NOT NULL,
     "student_id" bigint NOT NULL,
     "status" character varying(10) DEFAULT NULL::character varying,
-    "created_at" timestamp without time zone,
-    "updated_at" timestamp without time zone
+    "created_at" timestamp without time zone DEFAULT "now"(),
+    "updated_at" timestamp without time zone,
+    "status_verifikasi" character varying(50) DEFAULT 'pending'::character varying
 );
 
 
@@ -419,7 +422,7 @@ CREATE TABLE IF NOT EXISTS "public"."student_scores" (
     "mapel" character varying(255) NOT NULL,
     "jenis_penilaian" character varying(255) NOT NULL,
     "nilai" numeric(5,2) NOT NULL,
-    "created_at" timestamp without time zone,
+    "created_at" timestamp without time zone DEFAULT "now"(),
     "updated_at" timestamp without time zone
 );
 
@@ -449,6 +452,7 @@ CREATE TABLE IF NOT EXISTS "public"."students" (
     "jenis_kelamin" "public"."jk_enum" NOT NULL,
     "kelas" character varying(255) NOT NULL,
     "kelas_wali" character varying(255) DEFAULT NULL::character varying,
+    "kelas_belajar" character varying(255) DEFAULT NULL::character varying,
     "created_at" timestamp without time zone,
     "updated_at" timestamp without time zone
 );
@@ -480,6 +484,7 @@ CREATE TABLE IF NOT EXISTS "public"."teacher_absences" (
     "alasan_detail" "text" NOT NULL,
     "file_surat_keterangan" character varying(255) DEFAULT NULL::character varying,
     "titipan_tugas_kelas" "text",
+    "tugas_attachment_url" "text" DEFAULT NULL::text,
     "status_verifikasi" "public"."verifikasi_enum" DEFAULT 'pending'::"public"."verifikasi_enum" NOT NULL,
     "created_at" timestamp without time zone,
     "updated_at" timestamp without time zone
@@ -512,7 +517,7 @@ CREATE TABLE IF NOT EXISTS "public"."teaching_journals" (
     "jam_ke" character varying(255) NOT NULL,
     "materi_pembelajaran" "text" NOT NULL,
     "catatan_kelas" "text",
-    "created_at" timestamp without time zone,
+    "created_at" timestamp without time zone DEFAULT "now"(),
     "updated_at" timestamp without time zone
 );
 
@@ -541,9 +546,10 @@ CREATE TABLE IF NOT EXISTS "public"."teaching_schedules" (
     "mata_pelajaran" character varying(255) NOT NULL,
     "kelas" character varying(255) NOT NULL,
     "hari" character varying(255) NOT NULL,
-    "jam_ke" character varying(255) NOT NULL,
     "created_at" timestamp without time zone,
-    "updated_at" timestamp without time zone
+    "updated_at" timestamp without time zone,
+    "jam_mulai" integer DEFAULT 1 NOT NULL,
+    "durasi_jam" integer DEFAULT 1 NOT NULL
 );
 
 
@@ -749,7 +755,49 @@ ALTER TABLE ONLY "public"."users"
 
 
 
+CREATE INDEX "idx_journals_created_at" ON "public"."teaching_journals" USING "btree" ("created_at" DESC);
+
+
+
+CREATE INDEX "idx_journals_kelas" ON "public"."teaching_journals" USING "btree" ("kelas");
+
+
+
+CREATE INDEX "idx_journals_user_id" ON "public"."teaching_journals" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_student_attendances_status_verifikasi" ON "public"."student_attendances" USING "btree" ("status_verifikasi");
+
+
+
+CREATE INDEX "idx_student_attendances_tjournal_id" ON "public"."student_attendances" USING "btree" ("teaching_journal_id");
+
+
+
+CREATE INDEX "idx_teacher_absences_tanggal" ON "public"."teacher_absences" USING "btree" ("tanggal_absen" DESC);
+
+
+
+CREATE INDEX "idx_teacher_absences_user_id" ON "public"."teacher_absences" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_teacher_absences_verifikasi" ON "public"."teacher_absences" USING "btree" ("status_verifikasi");
+
+
+
 CREATE OR REPLACE TRIGGER "on_user_created" AFTER INSERT ON "public"."users" FOR EACH ROW EXECUTE FUNCTION "public"."handle_new_user"();
+
+
+
+ALTER TABLE ONLY "public"."student_scores"
+    ADD CONSTRAINT "fk_student_scores_student_id" FOREIGN KEY ("student_id") REFERENCES "public"."students"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."teaching_schedules"
+    ADD CONSTRAINT "fk_teaching_schedules_user_id" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE CASCADE;
 
 
 
