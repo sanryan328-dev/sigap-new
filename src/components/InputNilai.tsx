@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 import { useAuthStore } from '../store/useAuthStore';
 
 interface Siswa {
@@ -32,7 +33,69 @@ export default function InputNilai({
 }: InputNilaiProps) {
   const profile = useAuthStore((s) => s.profile);
   const [jenisPenilaian, setJenisPenilaian] = useState('');
+  const [selectedRiwayat, setSelectedRiwayat] = useState('');
+  const [riwayatList, setRiwayatList] = useState<string[]>([]);
   const [nilaiSiswa, setNilaiSiswa] = useState<{ [key: string]: number | undefined }>({});
+  const [loadingExisting, setLoadingExisting] = useState(false);
+
+  useEffect(() => {
+    setJenisPenilaian('');
+    setSelectedRiwayat('');
+    setNilaiSiswa({});
+    if (!kelas || !profile?.user_id) { setRiwayatList([]); return; }
+    const fetchRiwayat = async () => {
+      const { data } = await supabase
+        .from('student_scores')
+        .select('jenis_penilaian')
+        .eq('user_id', profile.user_id)
+        .eq('kelas', kelas)
+        .eq('mapel', mataPelajaran);
+      if (data) {
+        const unique = [...new Set(data.map(r => r.jenis_penilaian).filter(Boolean))] as string[];
+        setRiwayatList(unique);
+      }
+    };
+    fetchRiwayat();
+  }, [kelas, mataPelajaran, profile?.user_id]);
+
+  const fetchExistingScores = async (jenis: string) => {
+    if (!jenis.trim() || !kelas || !profile?.user_id) return;
+    setLoadingExisting(true);
+    try {
+      const { data } = await supabase
+        .from('student_scores')
+        .select('student_id, nilai')
+        .eq('user_id', profile.user_id)
+        .eq('kelas', kelas)
+        .eq('mapel', mataPelajaran)
+        .eq('jenis_penilaian', jenis.trim());
+      if (data) {
+        const prefill: Record<string, number | undefined> = {};
+        data.forEach((s: any) => { prefill[s.student_id] = s.nilai; });
+        setNilaiSiswa(prefill);
+      }
+    } catch (err) {
+      console.warn('Gagal memuat nilai existing:', err);
+    } finally {
+      setLoadingExisting(false);
+    }
+  };
+
+  const handleRiwayatChange = (value: string) => {
+    setSelectedRiwayat(value);
+    if (value) {
+      setJenisPenilaian(value);
+      fetchExistingScores(value);
+    }
+  };
+
+  const handleJenisKetikan = (value: string) => {
+    setJenisPenilaian(value);
+    if (value !== selectedRiwayat) {
+      setSelectedRiwayat('');
+      setNilaiSiswa({});
+    }
+  };
 
   const handleNilaiChange = (siswaId: string, value: string) => {
     if (value === '') {
@@ -67,7 +130,7 @@ export default function InputNilai({
   return (
     <div className="min-h-screen bg-slate-50 p-6 flex flex-col items-center">
       <div className="w-full max-w-4xl bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
-        
+
         {/* Header Navigasi */}
         <div className="mb-6 pb-4 border-b border-slate-100 flex items-center justify-between">
           <button
@@ -88,14 +151,14 @@ export default function InputNilai({
         </div>
 
         <form onSubmit={onSubmitNilai} className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Pilih Kelas Penilaian</label>
-              <select 
-                value={kelas} 
+              <select
+                value={kelas}
                 onChange={(e) => setKelas(e.target.value)}
                 disabled={loadingSimpan}
-                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold bg-white"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold"
               >
                 {daftarKelas.map((namaKelas) => (
                   <option key={namaKelas} value={namaKelas}>{namaKelas}</option>
@@ -103,18 +166,31 @@ export default function InputNilai({
               </select>
             </div>
 
-            {/* 🌟 PERBAIKAN: Berubah dari <select> menjadi <input type="text"> ketik bebas */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Nama / Jenis Penilaian</label>
               <input
                 type="text"
                 value={jenisPenilaian}
-                onChange={(e) => setJenisPenilaian(e.target.value)}
+                onChange={(e) => handleJenisKetikan(e.target.value)}
                 disabled={loadingSimpan}
                 placeholder="Contoh: UH 1, Tugas Kelompok, Remedi Bab 2"
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold bg-white"
                 required
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Riwayat Penilaian (Pilih untuk Susulan/Edit)</label>
+              <select
+                value={selectedRiwayat}
+                onChange={(e) => handleRiwayatChange(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold"
+              >
+                <option value="">Pilih Riwayat Penilaian...</option>
+                {riwayatList.map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -122,6 +198,7 @@ export default function InputNilai({
           <div className="border-t border-slate-100 pt-6">
             <h2 className="text-base font-semibold text-slate-800 mb-4">Input Angka Nilai - Kelas {kelas}</h2>
             {loadingSiswa && <p className="text-sm text-slate-500 animate-pulse">Mengambil data siswa...</p>}
+            {loadingExisting && <p className="text-sm text-slate-500 animate-pulse">Memuat nilai yang sudah ada...</p>}
 
             {!loadingSiswa && (
               <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white">
@@ -168,7 +245,7 @@ export default function InputNilai({
             disabled={loadingSimpan || daftarSiswa.length === 0}
             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 rounded-xl transition-colors shadow-sm cursor-pointer text-sm disabled:bg-slate-300"
           >
-            {loadingSimpan ? 'Sedang Menyimpan Nilai...' : `Simpan Rekap Penilaian`}
+            {loadingSimpan ? 'Sedang Menyimpan Nilai...' : 'Simpan Rekap Penilaian'}
           </button>
         </form>
       </div>

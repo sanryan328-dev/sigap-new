@@ -804,6 +804,13 @@ ALTER TABLE ONLY public.student_scores
     ADD CONSTRAINT student_scores_pkey PRIMARY KEY (id);
 
 --
+-- Name: student_scores student_scores_upsert_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.student_scores
+    ADD CONSTRAINT student_scores_upsert_key UNIQUE (user_id, student_id, kelas, mapel, jenis_penilaian);
+
+--
 -- Name: students students_nisn_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 

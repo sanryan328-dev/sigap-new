@@ -489,6 +489,7 @@ export default function App() {
           mapel: mataPelajaran,
           jenis_penilaian: jenisPenilaian,
           nilai,
+          updated_at: new Date().toISOString(),
         }));
 
       if (dataNilaiArray.length === 0) {
@@ -496,16 +497,10 @@ export default function App() {
         return;
       }
 
-      /* Hapus data lama untuk (user_id, kelas, mapel, jenis_penilaian) lalu insert ulang */
-      await supabase
+      const { error } = await supabase
         .from('student_scores')
-        .delete()
-        .eq('user_id', profile.user_id)
-        .eq('kelas', kelas)
-        .eq('mapel', mataPelajaran)
-        .eq('jenis_penilaian', jenisPenilaian);
+        .upsert(dataNilaiArray, { onConflict: 'user_id,student_id,kelas,mapel,jenis_penilaian' });
 
-      const { error } = await supabase.from('student_scores').insert(dataNilaiArray);
       if (error) throw error;
 
       toast.success(`Sukses! Rekap nilai ${jenisPenilaian} Kelas ${kelas} berhasil disimpan.`);
