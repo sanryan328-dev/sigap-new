@@ -499,7 +499,7 @@ export default function App() {
 
       const { error } = await supabase
         .from('student_scores')
-        .upsert(dataNilaiArray, { onConflict: 'user_id,student_id,kelas,mapel,jenis_penilaian' });
+        .upsert(dataNilaiArray, { onConflict: 'student_id, jenis_penilaian, user_id' });
 
       if (error) throw error;
 
@@ -552,7 +552,7 @@ export default function App() {
     );
   }
   if (isKurikulum && kurikulumPanel === 'kurikulum') {
-    return <KurikulumPortal onSwitchRole={() => setKurikulumPanel(null)} />;
+    return <KurikulumPortal onSwitchRole={() => setKurikulumPanel(null)} onGuruMapel={() => { setKurikulumPanel('guru_mapel'); setActiveRoleView('guru_mapel'); }} />;
   }
 
   // ── Kurikulum: dynamic redirect helpers ──

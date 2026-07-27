@@ -18,6 +18,7 @@ import { useAuthStore } from '../store/useAuthStore';
 
 interface KurikulumPortalProps {
   onSwitchRole?: () => void;
+  onGuruMapel?: () => void;
 }
 
 interface JurnalItem {
@@ -66,7 +67,7 @@ const VERIF_LABEL: Record<string, string> = {
   diverifikasi_piket: 'Terverifikasi',
 };
 
-export default function KurikulumPortal({ onSwitchRole }: KurikulumPortalProps) {
+export default function KurikulumPortal({ onSwitchRole, onGuruMapel }: KurikulumPortalProps) {
   const handleLogout = useAuthStore((s) => s.logout);
   const [tab, setTab] = useState<Tab>('jurnal');
   const [dataJurnal, setDataJurnal] = useState<JurnalItem[]>([]);
@@ -200,6 +201,12 @@ export default function KurikulumPortal({ onSwitchRole }: KurikulumPortalProps) 
           </div>
           <div className="flex-none gap-2">
             <OnlineStatus pendingCount={pendingCount} onSyncNow={syncNow} syncing={syncing} />
+            {onGuruMapel && (
+              <button onClick={onGuruMapel} className="btn btn-soft btn-accent btn-sm">
+                <BookOpen className="size-3.5" />
+                Guru Mata Pelajaran
+              </button>
+            )}
             {onSwitchRole && (
               <button onClick={onSwitchRole} className="btn btn-soft btn-primary btn-sm">
                 <Repeat className="size-3.5" />

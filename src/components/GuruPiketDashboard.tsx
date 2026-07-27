@@ -154,7 +154,7 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
       const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0).toISOString();
       const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999).toISOString();
 
-      // --- LOGIKA A: TARIK SISWA ABSEN DARI JAM PERTAMA ---
+      // --- LOGIKA A: TARIK SISWA ABSEN DARI SELURUH JAM PELAJARAN HARI INI ---
       const { data: jurnalHariIni } = await supabase
         .from('teaching_journals')
         .select('id, user_id, kelas, created_at')
@@ -162,36 +162,39 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
         .lte('created_at', endOfDay)
         .order('created_at', { ascending: true });
 
-      let jurnalPertamaMap: { [key: string]: any } = {};
       let guruHadirIds: number[] = [];
+      const semuaIdJurnal: number[] = [];
 
       if (jurnalHariIni) {
         jurnalHariIni.forEach((j: any) => {
-          // Kumpulkan ID guru yang sudah mengisi jurnal hari ini (Guru Hadir)
           if (!guruHadirIds.includes(j.user_id)) guruHadirIds.push(j.user_id);
-          // Ambil jurnal paling awal per kelas
-          if (!jurnalPertamaMap[j.kelas]) jurnalPertamaMap[j.kelas] = j.id;
+          semuaIdJurnal.push(j.id);
         });
       }
 
-      const idJurnalPertamaArray = Object.values(jurnalPertamaMap);
-
-      if (idJurnalPertamaArray.length > 0 && listStudents.length > 0) {
+      if (semuaIdJurnal.length > 0 && listStudents.length > 0) {
         const { data: absenSiswaData } = await supabase
           .from('student_attendances')
           .select('student_id, status, teaching_journal_id')
-          .in('teaching_journal_id', idJurnalPertamaArray)
-          .neq('status', 'Hadir'); // Ambil yang TDK HADIR saja
+          .in('teaching_journal_id', semuaIdJurnal)
+          .neq('status', 'Hadir');
 
         if (absenSiswaData) {
-          const mappedSiswa = absenSiswaData.map((a: any) => {
-            const mhs = listStudents.find(s => s.id === a.student_id);
-            return {
-              nama: mhs?.nama_siswa || 'Siswa',
-              kelas: mhs?.kelas || '?',
-              status: a.status
-            };
-          });
+          const seenStudentIds = new Set<number>();
+          const mappedSiswa = absenSiswaData
+            .filter((a: any) => {
+              if (seenStudentIds.has(a.student_id)) return false;
+              seenStudentIds.add(a.student_id);
+              return true;
+            })
+            .map((a: any) => {
+              const mhs = listStudents.find(s => s.id === a.student_id);
+              return {
+                nama: mhs?.nama_siswa || 'Siswa',
+                kelas: mhs?.kelas || '?',
+                status: a.status
+              };
+            });
           setRadarSiswaAbsen(mappedSiswa);
         }
       } else {
@@ -478,35 +481,35 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
               
-              {/* KOLOM KIRI: SISWA TIDAK HADIR */}
+              {/* KOLOM KIRI: SISWA TIDAK HADIR (Grouped by Class) */}
               <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
                 <div className="bg-slate-50 p-3 border-b border-slate-200 flex justify-between items-center">
-                  <h3 className="text-sm font-bold text-slate-800">📉 Siswa Tidak Hadir (Dari Jam Pertama)</h3>
+                  <h3 className="text-sm font-bold text-slate-800">📉 Siswa Tidak Hadir (Pemantauan Hari Ini)</h3>
                   <span className="text-[10px] font-bold bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">{radarSiswaAbsen.length} Anak</span>
                 </div>
-                <table className="w-full text-left text-sm border-collapse">
-                  <thead className="bg-slate-50 border-b border-slate-100 text-slate-500">
-                    <tr><th className="p-3">Kelas</th><th className="p-3">Nama Siswa</th><th className="p-3 text-center">Status</th></tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50 text-slate-700">
-                    {radarSiswaAbsen.length === 0 ? (
-                      <tr><td colSpan={3} className="p-6 text-center text-slate-400 italic">Semua siswa terpantau hadir / Jurnal jam pertama belum diisi.</td></tr>
-                    ) : (
-                      radarSiswaAbsen.map((s, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/50">
-                          <td className="p-3 font-bold text-slate-800">{s.kelas}</td>
-                          <td className="p-3 font-medium">{s.nama}</td>
-                          <td className="p-3 text-center">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              s.status === 'Sakit' ? 'bg-amber-100 text-amber-700' :
-                              s.status === 'Izin' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'
-                            }`}>{s.status}</span>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                <div className="divide-y divide-slate-100">
+                  {(() => {
+                    const allKelas = [...new Set(listStudents.map((s: any) => s.kelas).filter(Boolean))].sort();
+                    if (allKelas.length === 0) {
+                      const absenKelas = [...new Set(radarSiswaAbsen.map((s: any) => s.kelas))].sort();
+                      if (absenKelas.length === 0) {
+                        return <div className="p-6 text-center text-slate-400 italic">Semua siswa terpantau hadir / Jurnal jam pertama belum diisi.</div>;
+                      }
+                      return absenKelas.map(kelas => {
+                        const siswaKelas = radarSiswaAbsen.filter((s: any) => s.kelas === kelas);
+                        return (
+                          <PerClassSection key={kelas} kelas={kelas} siswaKelas={siswaKelas} />
+                        );
+                      });
+                    }
+                    return allKelas.map(kelas => {
+                      const siswaKelas = radarSiswaAbsen.filter((s: any) => s.kelas === kelas);
+                      return (
+                        <PerClassSection key={kelas} kelas={kelas} siswaKelas={siswaKelas} />
+                      );
+                    });
+                  })()}
+                </div>
               </div>
 
               {/* KOLOM KANAN: STATUS GURU */}
@@ -778,6 +781,36 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
             <p className="text-[11px] text-slate-500 mt-1">Pantau otomatis daftar siswa absen jam pertama & cek guru yang belum masuk kelas.</p>
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function PerClassSection({ kelas, siswaKelas }: { kelas: string; siswaKelas: any[] }) {
+  if (siswaKelas.length === 0) {
+    return (
+      <div className="flex items-center justify-between px-3 py-2.5 bg-slate-50/30">
+        <span className="font-bold text-sm text-slate-800">{kelas}</span>
+        <span className="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">✅ Hadir 100%</span>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <div className="flex items-center justify-between px-3 py-2 bg-slate-50/50 border-b border-slate-100">
+        <span className="font-bold text-sm text-slate-800">{kelas}</span>
+        <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full">{siswaKelas.length} Anak</span>
+      </div>
+      <div className="divide-y divide-slate-50">
+        {siswaKelas.map((s: any, idx: number) => (
+          <div key={idx} className="flex justify-between items-center px-3 py-2 hover:bg-slate-50/50">
+            <span className="font-medium text-sm text-slate-700">{s.nama}</span>
+            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+              s.status === 'Sakit' ? 'bg-amber-100 text-amber-700' :
+              s.status === 'Izin' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'
+            }`}>{s.status}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
