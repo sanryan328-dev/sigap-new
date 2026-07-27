@@ -71,7 +71,7 @@ export default function InputNilai({
         .eq('jenis_penilaian', jenis.trim());
       if (data) {
         const prefill: Record<string, number | undefined> = {};
-        data.forEach((s: any) => { prefill[s.student_id] = s.nilai; });
+        data.forEach((s: any) => { prefill[String(s.student_id)] = s.nilai; });
         setNilaiSiswa(prefill);
       }
     } catch (err) {
