@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuthStore } from '../store/useAuthStore';
 
+const SUGGESTED_JENIS = [
+  'Tugas', 'UH (Ulangan Harian)', 'PTS (Penilaian Tengah Semester)',
+  'PAS (Penilaian Akhir Semester)', 'Praktikum',
+];
+
 interface Siswa {
   id: string;
   nama_siswa: string;
@@ -81,19 +86,18 @@ export default function InputNilai({
     }
   };
 
+  useEffect(() => {
+    if (jenisPenilaian && kelas && mataPelajaran) {
+      fetchExistingScores(jenisPenilaian);
+    } else {
+      setNilaiSiswa({});
+    }
+  }, [jenisPenilaian, kelas, mataPelajaran]);
+
   const handleRiwayatChange = (value: string) => {
     setSelectedRiwayat(value);
     if (value) {
       setJenisPenilaian(value);
-      fetchExistingScores(value);
-    }
-  };
-
-  const handleJenisKetikan = (value: string) => {
-    setJenisPenilaian(value);
-    if (value !== selectedRiwayat) {
-      setSelectedRiwayat('');
-      setNilaiSiswa({});
     }
   };
 
@@ -113,7 +117,7 @@ export default function InputNilai({
   const onSubmitNilai = (e: React.FormEvent) => {
     e.preventDefault();
     if (!jenisPenilaian.trim()) {
-      alert('Silakan isi nama jenis penilaian terlebih dahulu!');
+      alert('Silakan ketik Nama/Jenis Penilaian terlebih dahulu!');
       return;
     }
     const filledEntries = Object.entries(nilaiSiswa).filter(
@@ -126,6 +130,8 @@ export default function InputNilai({
     handleSimpanNilai(jenisPenilaian, nilaiSiswa as Record<string, number>);
     setNilaiSiswa({});
   };
+
+  const belumPilihJenis = !jenisPenilaian;
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 flex flex-col items-center">
@@ -167,16 +173,27 @@ export default function InputNilai({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Nama / Jenis Penilaian</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Jenis Penilaian <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 value={jenisPenilaian}
-                onChange={(e) => handleJenisKetikan(e.target.value)}
+                onChange={(e) => {
+                  setJenisPenilaian(e.target.value);
+                  if (e.target.value !== selectedRiwayat) setSelectedRiwayat('');
+                }}
                 disabled={loadingSimpan}
-                placeholder="Contoh: UH 1, Tugas Kelompok, Remedi Bab 2"
+                placeholder="Ketik nama penilaian, misal: Tugas 1, UH 2, PTS, Praktikum Bab 3..."
+                list="jenis-penilaian-list"
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold bg-white"
                 required
               />
+              <datalist id="jenis-penilaian-list">
+                {SUGGESTED_JENIS.map((opt) => (
+                  <option key={opt} value={opt} />
+                ))}
+              </datalist>
             </div>
 
             <div>
@@ -194,59 +211,76 @@ export default function InputNilai({
             </div>
           </div>
 
-          {/* Tabel Input Nilai Siswa */}
+          {/* Tabel Input Nilai Siswa (hanya muncul jika Jenis Penilaian sudah dipilih) */}
           <div className="border-t border-slate-100 pt-6">
             <h2 className="text-base font-semibold text-slate-800 mb-4">Input Angka Nilai - Kelas {kelas}</h2>
-            {loadingSiswa && <p className="text-sm text-slate-500 animate-pulse">Mengambil data siswa...</p>}
-            {loadingExisting && <p className="text-sm text-slate-500 animate-pulse">Memuat nilai yang sudah ada...</p>}
 
-            {!loadingSiswa && (
-              <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-700 font-medium text-sm">
-                      <th className="p-4 w-2/3">Nama Siswa</th>
-                      <th className="p-4 w-1/3 text-center">Nilai (Skala 0 - 100)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-sm">
-                    {daftarSiswa.length === 0 ? (
-                      <tr>
-                        <td colSpan={2} className="p-8 text-center text-slate-400">Tidak ada data siswa.</td>
-                      </tr>
-                    ) : (
-                      daftarSiswa.map((siswa) => (
-                        <tr key={siswa.id} className="hover:bg-slate-50/50">
-                          <td className="p-4 font-medium text-slate-800">{siswa.nama_siswa}</td>
-                          <td className="p-4 flex justify-center">
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="0.01"
-                              placeholder="0"
-                              disabled={loadingSimpan}
-                              value={nilaiSiswa[siswa.id] !== undefined ? nilaiSiswa[siswa.id] : ''}
-                              onChange={(e) => handleNilaiChange(siswa.id, e.target.value)}
-                              className="w-24 px-3 py-1.5 border border-slate-300 rounded-lg text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                            />
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+            {belumPilihJenis ? (
+              <div className="flex items-start gap-3 p-4 rounded-xl border border-amber-200 bg-amber-50">
+                <span className="text-lg">✍️</span>
+                <div>
+                  <p className="text-sm font-semibold text-amber-800">
+                    Silakan ketik Nama/Jenis Penilaian terlebih dahulu (misal: Tugas 1, UH 2, PTS)
+                  </p>
+                  <p className="text-xs text-amber-600 mt-0.5">
+                    Setelah mengetik jenis penilaian, daftar siswa akan muncul dan Anda dapat menginput nilai.
+                  </p>
+                </div>
               </div>
+            ) : loadingSiswa ? (
+              <p className="text-sm text-slate-500 animate-pulse">Mengambil data siswa...</p>
+            ) : (
+              <>
+                {loadingExisting && <p className="text-sm text-slate-500 animate-pulse mb-3">Memuat nilai yang sudah ada...</p>}
+                <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-700 font-medium text-sm">
+                        <th className="p-4 w-2/3">Nama Siswa</th>
+                        <th className="p-4 w-1/3 text-center">Nilai (Skala 0 - 100)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm">
+                      {daftarSiswa.length === 0 ? (
+                        <tr>
+                          <td colSpan={2} className="p-8 text-center text-slate-400">Tidak ada data siswa.</td>
+                        </tr>
+                      ) : (
+                        daftarSiswa.map((siswa) => (
+                          <tr key={siswa.id} className="hover:bg-slate-50/50">
+                            <td className="p-4 font-medium text-slate-800">{siswa.nama_siswa}</td>
+                            <td className="p-4 flex justify-center">
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                placeholder="0"
+                                disabled={loadingSimpan}
+                                value={nilaiSiswa[siswa.id] !== undefined ? nilaiSiswa[siswa.id] : ''}
+                                onChange={(e) => handleNilaiChange(siswa.id, e.target.value)}
+                                className="w-24 px-3 py-1.5 border border-slate-300 rounded-lg text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                              />
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
 
-          <button
-            type="submit"
-            disabled={loadingSimpan || daftarSiswa.length === 0}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 rounded-xl transition-colors shadow-sm cursor-pointer text-sm disabled:bg-slate-300"
-          >
-            {loadingSimpan ? 'Sedang Menyimpan Nilai...' : 'Simpan Rekap Penilaian'}
-          </button>
+          {!belumPilihJenis && (
+            <button
+              type="submit"
+              disabled={loadingSimpan || daftarSiswa.length === 0}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 rounded-xl transition-colors shadow-sm cursor-pointer text-sm disabled:bg-slate-300"
+            >
+              {loadingSimpan ? 'Sedang Menyimpan Nilai...' : 'Simpan Rekap Penilaian'}
+            </button>
+          )}
         </form>
       </div>
     </div>
