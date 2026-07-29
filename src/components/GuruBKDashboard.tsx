@@ -975,7 +975,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
             className="flex flex-col items-start p-5 bg-white border border-slate-200 rounded-xl hover:border-purple-500 hover:shadow-md transition-all text-left group cursor-pointer"
           >
             <div className="text-xl mb-2 p-2 bg-purple-50 rounded-lg group-hover:bg-purple-600 group-hover:text-white transition-colors">📝</div>
-            <h3 className="font-bold text-slate-800 text-sm group-hover:text-purple-600">Catat Kasus Baru</h3>
+            <h3 className="font-bold text-slate-800 text-sm group-hover:text-purple-600">Catat Layanan Baru</h3>
             <p className="text-[11px] text-slate-500 mt-1">
               Input insiden indisipliner kerentanan belajar dengan integrasi bobot poin dinamis terfilter per kategori.
             </p>
