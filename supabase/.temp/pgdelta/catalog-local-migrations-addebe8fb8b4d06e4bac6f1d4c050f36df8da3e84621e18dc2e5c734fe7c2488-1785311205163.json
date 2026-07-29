@@ -8823,10 +8823,10 @@
       "comment": null,
       "owner": "supabase_realtime_admin"
     },
-    "index:realtime.messages_2026_07_26.messages_2026_07_26_inserted_at_topic_idx": {
+    "index:realtime.messages_2026_07_28.messages_2026_07_28_inserted_at_topic_idx": {
       "schema": "realtime",
-      "table_name": "messages_2026_07_26",
-      "name": "messages_2026_07_26_inserted_at_topic_idx",
+      "table_name": "messages_2026_07_28",
+      "name": "messages_2026_07_28_inserted_at_topic_idx",
       "storage_params": [],
       "statistics_target": [
         -1,
@@ -8864,142 +8864,7 @@
       "is_partitioned_index": false,
       "is_index_partition": true,
       "parent_index_name": "realtime.messages_inserted_at_topic_index",
-      "definition": "CREATE INDEX messages_2026_07_26_inserted_at_topic_idx ON realtime.messages_2026_07_26 USING btree (inserted_at DESC, topic) WHERE extension = 'broadcast'::text AND private IS TRUE",
-      "comment": null,
-      "owner": "supabase_realtime_admin"
-    },
-    "index:realtime.messages_2026_07_26.messages_2026_07_26_pkey": {
-      "schema": "realtime",
-      "table_name": "messages_2026_07_26",
-      "name": "messages_2026_07_26_pkey",
-      "storage_params": [],
-      "statistics_target": [
-        -1,
-        -1
-      ],
-      "index_type": "btree",
-      "tablespace": null,
-      "is_unique": true,
-      "is_primary": true,
-      "is_exclusion": false,
-      "nulls_not_distinct": false,
-      "immediate": true,
-      "is_clustered": false,
-      "is_replica_identity": false,
-      "key_columns": [
-        8,
-        7
-      ],
-      "column_collations": [
-        null,
-        null
-      ],
-      "operator_classes": [
-        "default",
-        "default"
-      ],
-      "column_options": [
-        0,
-        0
-      ],
-      "index_expressions": null,
-      "partial_predicate": null,
-      "table_relkind": "r",
-      "is_owned_by_constraint": true,
-      "is_partitioned_index": false,
-      "is_index_partition": true,
-      "parent_index_name": "realtime.messages_pkey",
-      "definition": "CREATE UNIQUE INDEX messages_2026_07_26_pkey ON realtime.messages_2026_07_26 USING btree (id, inserted_at)",
-      "comment": null,
-      "owner": "supabase_realtime_admin"
-    },
-    "index:realtime.messages_2026_07_27.messages_2026_07_27_inserted_at_topic_idx": {
-      "schema": "realtime",
-      "table_name": "messages_2026_07_27",
-      "name": "messages_2026_07_27_inserted_at_topic_idx",
-      "storage_params": [],
-      "statistics_target": [
-        -1,
-        -1
-      ],
-      "index_type": "btree",
-      "tablespace": null,
-      "is_unique": false,
-      "is_primary": false,
-      "is_exclusion": false,
-      "nulls_not_distinct": false,
-      "immediate": true,
-      "is_clustered": false,
-      "is_replica_identity": false,
-      "key_columns": [
-        7,
-        1
-      ],
-      "column_collations": [
-        null,
-        null
-      ],
-      "operator_classes": [
-        "default",
-        "default"
-      ],
-      "column_options": [
-        3,
-        0
-      ],
-      "index_expressions": null,
-      "partial_predicate": "((extension = 'broadcast'::text) AND (private IS TRUE))",
-      "table_relkind": "r",
-      "is_owned_by_constraint": false,
-      "is_partitioned_index": false,
-      "is_index_partition": true,
-      "parent_index_name": "realtime.messages_inserted_at_topic_index",
-      "definition": "CREATE INDEX messages_2026_07_27_inserted_at_topic_idx ON realtime.messages_2026_07_27 USING btree (inserted_at DESC, topic) WHERE extension = 'broadcast'::text AND private IS TRUE",
-      "comment": null,
-      "owner": "supabase_realtime_admin"
-    },
-    "index:realtime.messages_2026_07_27.messages_2026_07_27_pkey": {
-      "schema": "realtime",
-      "table_name": "messages_2026_07_27",
-      "name": "messages_2026_07_27_pkey",
-      "storage_params": [],
-      "statistics_target": [
-        -1,
-        -1
-      ],
-      "index_type": "btree",
-      "tablespace": null,
-      "is_unique": true,
-      "is_primary": true,
-      "is_exclusion": false,
-      "nulls_not_distinct": false,
-      "immediate": true,
-      "is_clustered": false,
-      "is_replica_identity": false,
-      "key_columns": [
-        8,
-        7
-      ],
-      "column_collations": [
-        null,
-        null
-      ],
-      "operator_classes": [
-        "default",
-        "default"
-      ],
-      "column_options": [
-        0,
-        0
-      ],
-      "index_expressions": null,
-      "partial_predicate": null,
-      "table_relkind": "r",
-      "is_owned_by_constraint": true,
-      "is_partitioned_index": false,
-      "is_index_partition": true,
-      "parent_index_name": "realtime.messages_pkey",
-      "definition": "CREATE UNIQUE INDEX messages_2026_07_27_pkey ON realtime.messages_2026_07_27 USING btree (id, inserted_at)",
+      "definition": "CREATE INDEX messages_2026_07_28_inserted_at_topic_idx ON realtime.messages_2026_07_28 USING btree (inserted_at DESC, topic) WHERE extension = 'broadcast'::text AND private IS TRUE",
       "comment": null,
       "owner": "supabase_realtime_admin"
     },
@@ -9045,51 +8910,6 @@
       "is_index_partition": true,
       "parent_index_name": "realtime.messages_pkey",
       "definition": "CREATE UNIQUE INDEX messages_2026_07_28_pkey ON realtime.messages_2026_07_28 USING btree (id, inserted_at)",
-      "comment": null,
-      "owner": "supabase_realtime_admin"
-    },
-    "index:realtime.messages_2026_07_28.messages_2026_07_28_inserted_at_topic_idx": {
-      "schema": "realtime",
-      "table_name": "messages_2026_07_28",
-      "name": "messages_2026_07_28_inserted_at_topic_idx",
-      "storage_params": [],
-      "statistics_target": [
-        -1,
-        -1
-      ],
-      "index_type": "btree",
-      "tablespace": null,
-      "is_unique": false,
-      "is_primary": false,
-      "is_exclusion": false,
-      "nulls_not_distinct": false,
-      "immediate": true,
-      "is_clustered": false,
-      "is_replica_identity": false,
-      "key_columns": [
-        7,
-        1
-      ],
-      "column_collations": [
-        null,
-        null
-      ],
-      "operator_classes": [
-        "default",
-        "default"
-      ],
-      "column_options": [
-        3,
-        0
-      ],
-      "index_expressions": null,
-      "partial_predicate": "((extension = 'broadcast'::text) AND (private IS TRUE))",
-      "table_relkind": "r",
-      "is_owned_by_constraint": false,
-      "is_partitioned_index": false,
-      "is_index_partition": true,
-      "parent_index_name": "realtime.messages_inserted_at_topic_index",
-      "definition": "CREATE INDEX messages_2026_07_28_inserted_at_topic_idx ON realtime.messages_2026_07_28 USING btree (inserted_at DESC, topic) WHERE extension = 'broadcast'::text AND private IS TRUE",
       "comment": null,
       "owner": "supabase_realtime_admin"
     },
@@ -9183,6 +9003,51 @@
       "comment": null,
       "owner": "supabase_realtime_admin"
     },
+    "index:realtime.messages_2026_07_30.messages_2026_07_30_pkey": {
+      "schema": "realtime",
+      "table_name": "messages_2026_07_30",
+      "name": "messages_2026_07_30_pkey",
+      "storage_params": [],
+      "statistics_target": [
+        -1,
+        -1
+      ],
+      "index_type": "btree",
+      "tablespace": null,
+      "is_unique": true,
+      "is_primary": true,
+      "is_exclusion": false,
+      "nulls_not_distinct": false,
+      "immediate": true,
+      "is_clustered": false,
+      "is_replica_identity": false,
+      "key_columns": [
+        8,
+        7
+      ],
+      "column_collations": [
+        null,
+        null
+      ],
+      "operator_classes": [
+        "default",
+        "default"
+      ],
+      "column_options": [
+        0,
+        0
+      ],
+      "index_expressions": null,
+      "partial_predicate": null,
+      "table_relkind": "r",
+      "is_owned_by_constraint": true,
+      "is_partitioned_index": false,
+      "is_index_partition": true,
+      "parent_index_name": "realtime.messages_pkey",
+      "definition": "CREATE UNIQUE INDEX messages_2026_07_30_pkey ON realtime.messages_2026_07_30 USING btree (id, inserted_at)",
+      "comment": null,
+      "owner": "supabase_realtime_admin"
+    },
     "index:realtime.messages_2026_07_30.messages_2026_07_30_inserted_at_topic_idx": {
       "schema": "realtime",
       "table_name": "messages_2026_07_30",
@@ -9228,10 +9093,55 @@
       "comment": null,
       "owner": "supabase_realtime_admin"
     },
-    "index:realtime.messages_2026_07_30.messages_2026_07_30_pkey": {
+    "index:realtime.messages_2026_07_31.messages_2026_07_31_inserted_at_topic_idx": {
       "schema": "realtime",
-      "table_name": "messages_2026_07_30",
-      "name": "messages_2026_07_30_pkey",
+      "table_name": "messages_2026_07_31",
+      "name": "messages_2026_07_31_inserted_at_topic_idx",
+      "storage_params": [],
+      "statistics_target": [
+        -1,
+        -1
+      ],
+      "index_type": "btree",
+      "tablespace": null,
+      "is_unique": false,
+      "is_primary": false,
+      "is_exclusion": false,
+      "nulls_not_distinct": false,
+      "immediate": true,
+      "is_clustered": false,
+      "is_replica_identity": false,
+      "key_columns": [
+        7,
+        1
+      ],
+      "column_collations": [
+        null,
+        null
+      ],
+      "operator_classes": [
+        "default",
+        "default"
+      ],
+      "column_options": [
+        3,
+        0
+      ],
+      "index_expressions": null,
+      "partial_predicate": "((extension = 'broadcast'::text) AND (private IS TRUE))",
+      "table_relkind": "r",
+      "is_owned_by_constraint": false,
+      "is_partitioned_index": false,
+      "is_index_partition": true,
+      "parent_index_name": "realtime.messages_inserted_at_topic_index",
+      "definition": "CREATE INDEX messages_2026_07_31_inserted_at_topic_idx ON realtime.messages_2026_07_31 USING btree (inserted_at DESC, topic) WHERE extension = 'broadcast'::text AND private IS TRUE",
+      "comment": null,
+      "owner": "supabase_realtime_admin"
+    },
+    "index:realtime.messages_2026_07_31.messages_2026_07_31_pkey": {
+      "schema": "realtime",
+      "table_name": "messages_2026_07_31",
+      "name": "messages_2026_07_31_pkey",
       "storage_params": [],
       "statistics_target": [
         -1,
@@ -9269,7 +9179,97 @@
       "is_partitioned_index": false,
       "is_index_partition": true,
       "parent_index_name": "realtime.messages_pkey",
-      "definition": "CREATE UNIQUE INDEX messages_2026_07_30_pkey ON realtime.messages_2026_07_30 USING btree (id, inserted_at)",
+      "definition": "CREATE UNIQUE INDEX messages_2026_07_31_pkey ON realtime.messages_2026_07_31 USING btree (id, inserted_at)",
+      "comment": null,
+      "owner": "supabase_realtime_admin"
+    },
+    "index:realtime.messages_2026_08_01.messages_2026_08_01_inserted_at_topic_idx": {
+      "schema": "realtime",
+      "table_name": "messages_2026_08_01",
+      "name": "messages_2026_08_01_inserted_at_topic_idx",
+      "storage_params": [],
+      "statistics_target": [
+        -1,
+        -1
+      ],
+      "index_type": "btree",
+      "tablespace": null,
+      "is_unique": false,
+      "is_primary": false,
+      "is_exclusion": false,
+      "nulls_not_distinct": false,
+      "immediate": true,
+      "is_clustered": false,
+      "is_replica_identity": false,
+      "key_columns": [
+        7,
+        1
+      ],
+      "column_collations": [
+        null,
+        null
+      ],
+      "operator_classes": [
+        "default",
+        "default"
+      ],
+      "column_options": [
+        3,
+        0
+      ],
+      "index_expressions": null,
+      "partial_predicate": "((extension = 'broadcast'::text) AND (private IS TRUE))",
+      "table_relkind": "r",
+      "is_owned_by_constraint": false,
+      "is_partitioned_index": false,
+      "is_index_partition": true,
+      "parent_index_name": "realtime.messages_inserted_at_topic_index",
+      "definition": "CREATE INDEX messages_2026_08_01_inserted_at_topic_idx ON realtime.messages_2026_08_01 USING btree (inserted_at DESC, topic) WHERE extension = 'broadcast'::text AND private IS TRUE",
+      "comment": null,
+      "owner": "supabase_realtime_admin"
+    },
+    "index:realtime.messages_2026_08_01.messages_2026_08_01_pkey": {
+      "schema": "realtime",
+      "table_name": "messages_2026_08_01",
+      "name": "messages_2026_08_01_pkey",
+      "storage_params": [],
+      "statistics_target": [
+        -1,
+        -1
+      ],
+      "index_type": "btree",
+      "tablespace": null,
+      "is_unique": true,
+      "is_primary": true,
+      "is_exclusion": false,
+      "nulls_not_distinct": false,
+      "immediate": true,
+      "is_clustered": false,
+      "is_replica_identity": false,
+      "key_columns": [
+        8,
+        7
+      ],
+      "column_collations": [
+        null,
+        null
+      ],
+      "operator_classes": [
+        "default",
+        "default"
+      ],
+      "column_options": [
+        0,
+        0
+      ],
+      "index_expressions": null,
+      "partial_predicate": null,
+      "table_relkind": "r",
+      "is_owned_by_constraint": true,
+      "is_partitioned_index": false,
+      "is_index_partition": true,
+      "parent_index_name": "realtime.messages_pkey",
+      "definition": "CREATE UNIQUE INDEX messages_2026_08_01_pkey ON realtime.messages_2026_08_01 USING btree (id, inserted_at)",
       "comment": null,
       "owner": "supabase_realtime_admin"
     },
@@ -29818,6 +29818,44 @@
           "default": null,
           "comment": null,
           "security_labels": []
+        },
+        {
+          "name": "jenis_input",
+          "position": 11,
+          "data_type": "character varying",
+          "data_type_str": "character varying(50)",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": true,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": "'pelanggaran'::character varying",
+          "comment": null,
+          "security_labels": []
+        },
+        {
+          "name": "kategori_layanan",
+          "position": 12,
+          "data_type": "character varying",
+          "data_type_str": "character varying(50)",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": false,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": null,
+          "comment": null,
+          "security_labels": []
         }
       ],
       "constraints": [
@@ -36960,830 +36998,6 @@
       ],
       "security_labels": []
     },
-    "table:realtime.messages_2026_07_26": {
-      "schema": "realtime",
-      "name": "messages_2026_07_26",
-      "persistence": "p",
-      "row_security": false,
-      "force_row_security": false,
-      "has_indexes": true,
-      "has_rules": false,
-      "has_triggers": false,
-      "has_subclasses": false,
-      "is_populated": true,
-      "replica_identity": "d",
-      "replica_identity_index": null,
-      "is_partition": true,
-      "options": null,
-      "partition_bound": "FOR VALUES FROM ('2026-07-26 00:00:00') TO ('2026-07-27 00:00:00')",
-      "partition_by": null,
-      "owner": "supabase_realtime_admin",
-      "comment": null,
-      "parent_schema": "realtime",
-      "parent_name": "messages",
-      "columns": [
-        {
-          "name": "topic",
-          "position": 1,
-          "data_type": "text",
-          "data_type_str": "text",
-          "is_custom_type": false,
-          "custom_type_type": null,
-          "custom_type_category": null,
-          "custom_type_schema": null,
-          "custom_type_name": null,
-          "not_null": true,
-          "is_identity": false,
-          "is_identity_always": false,
-          "is_generated": false,
-          "collation": null,
-          "default": null,
-          "comment": null,
-          "security_labels": []
-        },
-        {
-          "name": "extension",
-          "position": 2,
-          "data_type": "text",
-          "data_type_str": "text",
-          "is_custom_type": false,
-          "custom_type_type": null,
-          "custom_type_category": null,
-          "custom_type_schema": null,
-          "custom_type_name": null,
-          "not_null": true,
-          "is_identity": false,
-          "is_identity_always": false,
-          "is_generated": false,
-          "collation": null,
-          "default": null,
-          "comment": null,
-          "security_labels": []
-        },
-        {
-          "name": "payload",
-          "position": 3,
-          "data_type": "jsonb",
-          "data_type_str": "jsonb",
-          "is_custom_type": false,
-          "custom_type_type": null,
-          "custom_type_category": null,
-          "custom_type_schema": null,
-          "custom_type_name": null,
-          "not_null": false,
-          "is_identity": false,
-          "is_identity_always": false,
-          "is_generated": false,
-          "collation": null,
-          "default": null,
-          "comment": null,
-          "security_labels": []
-        },
-        {
-          "name": "event",
-          "position": 4,
-          "data_type": "text",
-          "data_type_str": "text",
-          "is_custom_type": false,
-          "custom_type_type": null,
-          "custom_type_category": null,
-          "custom_type_schema": null,
-          "custom_type_name": null,
-          "not_null": false,
-          "is_identity": false,
-          "is_identity_always": false,
-          "is_generated": false,
-          "collation": null,
-          "default": null,
-          "comment": null,
-          "security_labels": []
-        },
-        {
-          "name": "private",
-          "position": 5,
-          "data_type": "boolean",
-          "data_type_str": "boolean",
-          "is_custom_type": false,
-          "custom_type_type": null,
-          "custom_type_category": null,
-          "custom_type_schema": null,
-          "custom_type_name": null,
-          "not_null": false,
-          "is_identity": false,
-          "is_identity_always": false,
-          "is_generated": false,
-          "collation": null,
-          "default": "false",
-          "comment": null,
-          "security_labels": []
-        },
-        {
-          "name": "updated_at",
-          "position": 6,
-          "data_type": "timestamp without time zone",
-          "data_type_str": "timestamp without time zone",
-          "is_custom_type": false,
-          "custom_type_type": null,
-          "custom_type_category": null,
-          "custom_type_schema": null,
-          "custom_type_name": null,
-          "not_null": true,
-          "is_identity": false,
-          "is_identity_always": false,
-          "is_generated": false,
-          "collation": null,
-          "default": "now()",
-          "comment": null,
-          "security_labels": []
-        },
-        {
-          "name": "inserted_at",
-          "position": 7,
-          "data_type": "timestamp without time zone",
-          "data_type_str": "timestamp without time zone",
-          "is_custom_type": false,
-          "custom_type_type": null,
-          "custom_type_category": null,
-          "custom_type_schema": null,
-          "custom_type_name": null,
-          "not_null": true,
-          "is_identity": false,
-          "is_identity_always": false,
-          "is_generated": false,
-          "collation": null,
-          "default": "now()",
-          "comment": null,
-          "security_labels": []
-        },
-        {
-          "name": "id",
-          "position": 8,
-          "data_type": "uuid",
-          "data_type_str": "uuid",
-          "is_custom_type": false,
-          "custom_type_type": null,
-          "custom_type_category": null,
-          "custom_type_schema": null,
-          "custom_type_name": null,
-          "not_null": true,
-          "is_identity": false,
-          "is_identity_always": false,
-          "is_generated": false,
-          "collation": null,
-          "default": "gen_random_uuid()",
-          "comment": null,
-          "security_labels": []
-        },
-        {
-          "name": "binary_payload",
-          "position": 9,
-          "data_type": "bytea",
-          "data_type_str": "bytea",
-          "is_custom_type": false,
-          "custom_type_type": null,
-          "custom_type_category": null,
-          "custom_type_schema": null,
-          "custom_type_name": null,
-          "not_null": false,
-          "is_identity": false,
-          "is_identity_always": false,
-          "is_generated": false,
-          "collation": null,
-          "default": null,
-          "comment": null,
-          "security_labels": []
-        }
-      ],
-      "constraints": [
-        {
-          "name": "messages_2026_07_26_pkey",
-          "constraint_type": "p",
-          "deferrable": false,
-          "initially_deferred": false,
-          "validated": true,
-          "is_local": false,
-          "no_inherit": false,
-          "is_temporal": false,
-          "is_partition_clone": true,
-          "parent_constraint_schema": "realtime",
-          "parent_constraint_name": "messages_pkey",
-          "parent_table_schema": "realtime",
-          "parent_table_name": "messages",
-          "key_columns": [
-            "id",
-            "inserted_at"
-          ],
-          "foreign_key_columns": null,
-          "foreign_key_table": null,
-          "foreign_key_schema": null,
-          "foreign_key_table_is_partition": null,
-          "foreign_key_parent_schema": null,
-          "foreign_key_parent_table": null,
-          "foreign_key_effective_schema": null,
-          "foreign_key_effective_table": null,
-          "on_update": null,
-          "on_delete": null,
-          "match_type": null,
-          "check_expression": null,
-          "owner": "supabase_realtime_admin",
-          "definition": "PRIMARY KEY (id, inserted_at)",
-          "comment": null
-        },
-        {
-          "name": "messages_payload_exclusive",
-          "constraint_type": "c",
-          "deferrable": false,
-          "initially_deferred": false,
-          "validated": true,
-          "is_local": false,
-          "no_inherit": false,
-          "is_temporal": false,
-          "is_partition_clone": true,
-          "parent_constraint_schema": null,
-          "parent_constraint_name": null,
-          "parent_table_schema": null,
-          "parent_table_name": null,
-          "key_columns": [
-            "payload",
-            "binary_payload"
-          ],
-          "foreign_key_columns": null,
-          "foreign_key_table": null,
-          "foreign_key_schema": null,
-          "foreign_key_table_is_partition": null,
-          "foreign_key_parent_schema": null,
-          "foreign_key_parent_table": null,
-          "foreign_key_effective_schema": null,
-          "foreign_key_effective_table": null,
-          "on_update": null,
-          "on_delete": null,
-          "match_type": null,
-          "check_expression": "((payload IS NULL) OR (binary_payload IS NULL))",
-          "owner": "supabase_realtime_admin",
-          "definition": "CHECK (payload IS NULL OR binary_payload IS NULL)",
-          "comment": null
-        }
-      ],
-      "privileges": [
-        {
-          "grantee": "postgres",
-          "privilege": "DELETE",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "postgres",
-          "privilege": "INSERT",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "postgres",
-          "privilege": "MAINTAIN",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "postgres",
-          "privilege": "REFERENCES",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "postgres",
-          "privilege": "SELECT",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "postgres",
-          "privilege": "TRIGGER",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "postgres",
-          "privilege": "TRUNCATE",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "postgres",
-          "privilege": "UPDATE",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "dashboard_user",
-          "privilege": "DELETE",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "dashboard_user",
-          "privilege": "INSERT",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "dashboard_user",
-          "privilege": "MAINTAIN",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "dashboard_user",
-          "privilege": "REFERENCES",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "dashboard_user",
-          "privilege": "SELECT",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "dashboard_user",
-          "privilege": "TRIGGER",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "dashboard_user",
-          "privilege": "TRUNCATE",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "dashboard_user",
-          "privilege": "UPDATE",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "supabase_realtime_admin",
-          "privilege": "DELETE",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "supabase_realtime_admin",
-          "privilege": "INSERT",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "supabase_realtime_admin",
-          "privilege": "MAINTAIN",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "supabase_realtime_admin",
-          "privilege": "REFERENCES",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "supabase_realtime_admin",
-          "privilege": "SELECT",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "supabase_realtime_admin",
-          "privilege": "TRIGGER",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "supabase_realtime_admin",
-          "privilege": "TRUNCATE",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "supabase_realtime_admin",
-          "privilege": "UPDATE",
-          "grantable": false,
-          "columns": null
-        }
-      ],
-      "security_labels": []
-    },
-    "table:realtime.messages_2026_07_27": {
-      "schema": "realtime",
-      "name": "messages_2026_07_27",
-      "persistence": "p",
-      "row_security": false,
-      "force_row_security": false,
-      "has_indexes": true,
-      "has_rules": false,
-      "has_triggers": false,
-      "has_subclasses": false,
-      "is_populated": true,
-      "replica_identity": "d",
-      "replica_identity_index": null,
-      "is_partition": true,
-      "options": null,
-      "partition_bound": "FOR VALUES FROM ('2026-07-27 00:00:00') TO ('2026-07-28 00:00:00')",
-      "partition_by": null,
-      "owner": "supabase_realtime_admin",
-      "comment": null,
-      "parent_schema": "realtime",
-      "parent_name": "messages",
-      "columns": [
-        {
-          "name": "topic",
-          "position": 1,
-          "data_type": "text",
-          "data_type_str": "text",
-          "is_custom_type": false,
-          "custom_type_type": null,
-          "custom_type_category": null,
-          "custom_type_schema": null,
-          "custom_type_name": null,
-          "not_null": true,
-          "is_identity": false,
-          "is_identity_always": false,
-          "is_generated": false,
-          "collation": null,
-          "default": null,
-          "comment": null,
-          "security_labels": []
-        },
-        {
-          "name": "extension",
-          "position": 2,
-          "data_type": "text",
-          "data_type_str": "text",
-          "is_custom_type": false,
-          "custom_type_type": null,
-          "custom_type_category": null,
-          "custom_type_schema": null,
-          "custom_type_name": null,
-          "not_null": true,
-          "is_identity": false,
-          "is_identity_always": false,
-          "is_generated": false,
-          "collation": null,
-          "default": null,
-          "comment": null,
-          "security_labels": []
-        },
-        {
-          "name": "payload",
-          "position": 3,
-          "data_type": "jsonb",
-          "data_type_str": "jsonb",
-          "is_custom_type": false,
-          "custom_type_type": null,
-          "custom_type_category": null,
-          "custom_type_schema": null,
-          "custom_type_name": null,
-          "not_null": false,
-          "is_identity": false,
-          "is_identity_always": false,
-          "is_generated": false,
-          "collation": null,
-          "default": null,
-          "comment": null,
-          "security_labels": []
-        },
-        {
-          "name": "event",
-          "position": 4,
-          "data_type": "text",
-          "data_type_str": "text",
-          "is_custom_type": false,
-          "custom_type_type": null,
-          "custom_type_category": null,
-          "custom_type_schema": null,
-          "custom_type_name": null,
-          "not_null": false,
-          "is_identity": false,
-          "is_identity_always": false,
-          "is_generated": false,
-          "collation": null,
-          "default": null,
-          "comment": null,
-          "security_labels": []
-        },
-        {
-          "name": "private",
-          "position": 5,
-          "data_type": "boolean",
-          "data_type_str": "boolean",
-          "is_custom_type": false,
-          "custom_type_type": null,
-          "custom_type_category": null,
-          "custom_type_schema": null,
-          "custom_type_name": null,
-          "not_null": false,
-          "is_identity": false,
-          "is_identity_always": false,
-          "is_generated": false,
-          "collation": null,
-          "default": "false",
-          "comment": null,
-          "security_labels": []
-        },
-        {
-          "name": "updated_at",
-          "position": 6,
-          "data_type": "timestamp without time zone",
-          "data_type_str": "timestamp without time zone",
-          "is_custom_type": false,
-          "custom_type_type": null,
-          "custom_type_category": null,
-          "custom_type_schema": null,
-          "custom_type_name": null,
-          "not_null": true,
-          "is_identity": false,
-          "is_identity_always": false,
-          "is_generated": false,
-          "collation": null,
-          "default": "now()",
-          "comment": null,
-          "security_labels": []
-        },
-        {
-          "name": "inserted_at",
-          "position": 7,
-          "data_type": "timestamp without time zone",
-          "data_type_str": "timestamp without time zone",
-          "is_custom_type": false,
-          "custom_type_type": null,
-          "custom_type_category": null,
-          "custom_type_schema": null,
-          "custom_type_name": null,
-          "not_null": true,
-          "is_identity": false,
-          "is_identity_always": false,
-          "is_generated": false,
-          "collation": null,
-          "default": "now()",
-          "comment": null,
-          "security_labels": []
-        },
-        {
-          "name": "id",
-          "position": 8,
-          "data_type": "uuid",
-          "data_type_str": "uuid",
-          "is_custom_type": false,
-          "custom_type_type": null,
-          "custom_type_category": null,
-          "custom_type_schema": null,
-          "custom_type_name": null,
-          "not_null": true,
-          "is_identity": false,
-          "is_identity_always": false,
-          "is_generated": false,
-          "collation": null,
-          "default": "gen_random_uuid()",
-          "comment": null,
-          "security_labels": []
-        },
-        {
-          "name": "binary_payload",
-          "position": 9,
-          "data_type": "bytea",
-          "data_type_str": "bytea",
-          "is_custom_type": false,
-          "custom_type_type": null,
-          "custom_type_category": null,
-          "custom_type_schema": null,
-          "custom_type_name": null,
-          "not_null": false,
-          "is_identity": false,
-          "is_identity_always": false,
-          "is_generated": false,
-          "collation": null,
-          "default": null,
-          "comment": null,
-          "security_labels": []
-        }
-      ],
-      "constraints": [
-        {
-          "name": "messages_2026_07_27_pkey",
-          "constraint_type": "p",
-          "deferrable": false,
-          "initially_deferred": false,
-          "validated": true,
-          "is_local": false,
-          "no_inherit": false,
-          "is_temporal": false,
-          "is_partition_clone": true,
-          "parent_constraint_schema": "realtime",
-          "parent_constraint_name": "messages_pkey",
-          "parent_table_schema": "realtime",
-          "parent_table_name": "messages",
-          "key_columns": [
-            "id",
-            "inserted_at"
-          ],
-          "foreign_key_columns": null,
-          "foreign_key_table": null,
-          "foreign_key_schema": null,
-          "foreign_key_table_is_partition": null,
-          "foreign_key_parent_schema": null,
-          "foreign_key_parent_table": null,
-          "foreign_key_effective_schema": null,
-          "foreign_key_effective_table": null,
-          "on_update": null,
-          "on_delete": null,
-          "match_type": null,
-          "check_expression": null,
-          "owner": "supabase_realtime_admin",
-          "definition": "PRIMARY KEY (id, inserted_at)",
-          "comment": null
-        },
-        {
-          "name": "messages_payload_exclusive",
-          "constraint_type": "c",
-          "deferrable": false,
-          "initially_deferred": false,
-          "validated": true,
-          "is_local": false,
-          "no_inherit": false,
-          "is_temporal": false,
-          "is_partition_clone": true,
-          "parent_constraint_schema": null,
-          "parent_constraint_name": null,
-          "parent_table_schema": null,
-          "parent_table_name": null,
-          "key_columns": [
-            "payload",
-            "binary_payload"
-          ],
-          "foreign_key_columns": null,
-          "foreign_key_table": null,
-          "foreign_key_schema": null,
-          "foreign_key_table_is_partition": null,
-          "foreign_key_parent_schema": null,
-          "foreign_key_parent_table": null,
-          "foreign_key_effective_schema": null,
-          "foreign_key_effective_table": null,
-          "on_update": null,
-          "on_delete": null,
-          "match_type": null,
-          "check_expression": "((payload IS NULL) OR (binary_payload IS NULL))",
-          "owner": "supabase_realtime_admin",
-          "definition": "CHECK (payload IS NULL OR binary_payload IS NULL)",
-          "comment": null
-        }
-      ],
-      "privileges": [
-        {
-          "grantee": "postgres",
-          "privilege": "DELETE",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "postgres",
-          "privilege": "INSERT",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "postgres",
-          "privilege": "MAINTAIN",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "postgres",
-          "privilege": "REFERENCES",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "postgres",
-          "privilege": "SELECT",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "postgres",
-          "privilege": "TRIGGER",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "postgres",
-          "privilege": "TRUNCATE",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "postgres",
-          "privilege": "UPDATE",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "dashboard_user",
-          "privilege": "DELETE",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "dashboard_user",
-          "privilege": "INSERT",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "dashboard_user",
-          "privilege": "MAINTAIN",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "dashboard_user",
-          "privilege": "REFERENCES",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "dashboard_user",
-          "privilege": "SELECT",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "dashboard_user",
-          "privilege": "TRIGGER",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "dashboard_user",
-          "privilege": "TRUNCATE",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "dashboard_user",
-          "privilege": "UPDATE",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "supabase_realtime_admin",
-          "privilege": "DELETE",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "supabase_realtime_admin",
-          "privilege": "INSERT",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "supabase_realtime_admin",
-          "privilege": "MAINTAIN",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "supabase_realtime_admin",
-          "privilege": "REFERENCES",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "supabase_realtime_admin",
-          "privilege": "SELECT",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "supabase_realtime_admin",
-          "privilege": "TRIGGER",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "supabase_realtime_admin",
-          "privilege": "TRUNCATE",
-          "grantable": false,
-          "columns": null
-        },
-        {
-          "grantee": "supabase_realtime_admin",
-          "privilege": "UPDATE",
-          "grantable": false,
-          "columns": null
-        }
-      ],
-      "security_labels": []
-    },
     "table:realtime.messages_2026_07_28": {
       "schema": "realtime",
       "name": "messages_2026_07_28",
@@ -38805,6 +38019,830 @@
       "constraints": [
         {
           "name": "messages_2026_07_30_pkey",
+          "constraint_type": "p",
+          "deferrable": false,
+          "initially_deferred": false,
+          "validated": true,
+          "is_local": false,
+          "no_inherit": false,
+          "is_temporal": false,
+          "is_partition_clone": true,
+          "parent_constraint_schema": "realtime",
+          "parent_constraint_name": "messages_pkey",
+          "parent_table_schema": "realtime",
+          "parent_table_name": "messages",
+          "key_columns": [
+            "id",
+            "inserted_at"
+          ],
+          "foreign_key_columns": null,
+          "foreign_key_table": null,
+          "foreign_key_schema": null,
+          "foreign_key_table_is_partition": null,
+          "foreign_key_parent_schema": null,
+          "foreign_key_parent_table": null,
+          "foreign_key_effective_schema": null,
+          "foreign_key_effective_table": null,
+          "on_update": null,
+          "on_delete": null,
+          "match_type": null,
+          "check_expression": null,
+          "owner": "supabase_realtime_admin",
+          "definition": "PRIMARY KEY (id, inserted_at)",
+          "comment": null
+        },
+        {
+          "name": "messages_payload_exclusive",
+          "constraint_type": "c",
+          "deferrable": false,
+          "initially_deferred": false,
+          "validated": true,
+          "is_local": false,
+          "no_inherit": false,
+          "is_temporal": false,
+          "is_partition_clone": true,
+          "parent_constraint_schema": null,
+          "parent_constraint_name": null,
+          "parent_table_schema": null,
+          "parent_table_name": null,
+          "key_columns": [
+            "payload",
+            "binary_payload"
+          ],
+          "foreign_key_columns": null,
+          "foreign_key_table": null,
+          "foreign_key_schema": null,
+          "foreign_key_table_is_partition": null,
+          "foreign_key_parent_schema": null,
+          "foreign_key_parent_table": null,
+          "foreign_key_effective_schema": null,
+          "foreign_key_effective_table": null,
+          "on_update": null,
+          "on_delete": null,
+          "match_type": null,
+          "check_expression": "((payload IS NULL) OR (binary_payload IS NULL))",
+          "owner": "supabase_realtime_admin",
+          "definition": "CHECK (payload IS NULL OR binary_payload IS NULL)",
+          "comment": null
+        }
+      ],
+      "privileges": [
+        {
+          "grantee": "postgres",
+          "privilege": "DELETE",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "postgres",
+          "privilege": "INSERT",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "postgres",
+          "privilege": "MAINTAIN",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "postgres",
+          "privilege": "REFERENCES",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "postgres",
+          "privilege": "SELECT",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "postgres",
+          "privilege": "TRIGGER",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "postgres",
+          "privilege": "TRUNCATE",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "postgres",
+          "privilege": "UPDATE",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "dashboard_user",
+          "privilege": "DELETE",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "dashboard_user",
+          "privilege": "INSERT",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "dashboard_user",
+          "privilege": "MAINTAIN",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "dashboard_user",
+          "privilege": "REFERENCES",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "dashboard_user",
+          "privilege": "SELECT",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "dashboard_user",
+          "privilege": "TRIGGER",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "dashboard_user",
+          "privilege": "TRUNCATE",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "dashboard_user",
+          "privilege": "UPDATE",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "supabase_realtime_admin",
+          "privilege": "DELETE",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "supabase_realtime_admin",
+          "privilege": "INSERT",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "supabase_realtime_admin",
+          "privilege": "MAINTAIN",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "supabase_realtime_admin",
+          "privilege": "REFERENCES",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "supabase_realtime_admin",
+          "privilege": "SELECT",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "supabase_realtime_admin",
+          "privilege": "TRIGGER",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "supabase_realtime_admin",
+          "privilege": "TRUNCATE",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "supabase_realtime_admin",
+          "privilege": "UPDATE",
+          "grantable": false,
+          "columns": null
+        }
+      ],
+      "security_labels": []
+    },
+    "table:realtime.messages_2026_07_31": {
+      "schema": "realtime",
+      "name": "messages_2026_07_31",
+      "persistence": "p",
+      "row_security": false,
+      "force_row_security": false,
+      "has_indexes": true,
+      "has_rules": false,
+      "has_triggers": false,
+      "has_subclasses": false,
+      "is_populated": true,
+      "replica_identity": "d",
+      "replica_identity_index": null,
+      "is_partition": true,
+      "options": null,
+      "partition_bound": "FOR VALUES FROM ('2026-07-31 00:00:00') TO ('2026-08-01 00:00:00')",
+      "partition_by": null,
+      "owner": "supabase_realtime_admin",
+      "comment": null,
+      "parent_schema": "realtime",
+      "parent_name": "messages",
+      "columns": [
+        {
+          "name": "topic",
+          "position": 1,
+          "data_type": "text",
+          "data_type_str": "text",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": true,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": null,
+          "comment": null,
+          "security_labels": []
+        },
+        {
+          "name": "extension",
+          "position": 2,
+          "data_type": "text",
+          "data_type_str": "text",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": true,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": null,
+          "comment": null,
+          "security_labels": []
+        },
+        {
+          "name": "payload",
+          "position": 3,
+          "data_type": "jsonb",
+          "data_type_str": "jsonb",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": false,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": null,
+          "comment": null,
+          "security_labels": []
+        },
+        {
+          "name": "event",
+          "position": 4,
+          "data_type": "text",
+          "data_type_str": "text",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": false,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": null,
+          "comment": null,
+          "security_labels": []
+        },
+        {
+          "name": "private",
+          "position": 5,
+          "data_type": "boolean",
+          "data_type_str": "boolean",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": false,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": "false",
+          "comment": null,
+          "security_labels": []
+        },
+        {
+          "name": "updated_at",
+          "position": 6,
+          "data_type": "timestamp without time zone",
+          "data_type_str": "timestamp without time zone",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": true,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": "now()",
+          "comment": null,
+          "security_labels": []
+        },
+        {
+          "name": "inserted_at",
+          "position": 7,
+          "data_type": "timestamp without time zone",
+          "data_type_str": "timestamp without time zone",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": true,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": "now()",
+          "comment": null,
+          "security_labels": []
+        },
+        {
+          "name": "id",
+          "position": 8,
+          "data_type": "uuid",
+          "data_type_str": "uuid",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": true,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": "gen_random_uuid()",
+          "comment": null,
+          "security_labels": []
+        },
+        {
+          "name": "binary_payload",
+          "position": 9,
+          "data_type": "bytea",
+          "data_type_str": "bytea",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": false,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": null,
+          "comment": null,
+          "security_labels": []
+        }
+      ],
+      "constraints": [
+        {
+          "name": "messages_2026_07_31_pkey",
+          "constraint_type": "p",
+          "deferrable": false,
+          "initially_deferred": false,
+          "validated": true,
+          "is_local": false,
+          "no_inherit": false,
+          "is_temporal": false,
+          "is_partition_clone": true,
+          "parent_constraint_schema": "realtime",
+          "parent_constraint_name": "messages_pkey",
+          "parent_table_schema": "realtime",
+          "parent_table_name": "messages",
+          "key_columns": [
+            "id",
+            "inserted_at"
+          ],
+          "foreign_key_columns": null,
+          "foreign_key_table": null,
+          "foreign_key_schema": null,
+          "foreign_key_table_is_partition": null,
+          "foreign_key_parent_schema": null,
+          "foreign_key_parent_table": null,
+          "foreign_key_effective_schema": null,
+          "foreign_key_effective_table": null,
+          "on_update": null,
+          "on_delete": null,
+          "match_type": null,
+          "check_expression": null,
+          "owner": "supabase_realtime_admin",
+          "definition": "PRIMARY KEY (id, inserted_at)",
+          "comment": null
+        },
+        {
+          "name": "messages_payload_exclusive",
+          "constraint_type": "c",
+          "deferrable": false,
+          "initially_deferred": false,
+          "validated": true,
+          "is_local": false,
+          "no_inherit": false,
+          "is_temporal": false,
+          "is_partition_clone": true,
+          "parent_constraint_schema": null,
+          "parent_constraint_name": null,
+          "parent_table_schema": null,
+          "parent_table_name": null,
+          "key_columns": [
+            "payload",
+            "binary_payload"
+          ],
+          "foreign_key_columns": null,
+          "foreign_key_table": null,
+          "foreign_key_schema": null,
+          "foreign_key_table_is_partition": null,
+          "foreign_key_parent_schema": null,
+          "foreign_key_parent_table": null,
+          "foreign_key_effective_schema": null,
+          "foreign_key_effective_table": null,
+          "on_update": null,
+          "on_delete": null,
+          "match_type": null,
+          "check_expression": "((payload IS NULL) OR (binary_payload IS NULL))",
+          "owner": "supabase_realtime_admin",
+          "definition": "CHECK (payload IS NULL OR binary_payload IS NULL)",
+          "comment": null
+        }
+      ],
+      "privileges": [
+        {
+          "grantee": "postgres",
+          "privilege": "DELETE",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "postgres",
+          "privilege": "INSERT",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "postgres",
+          "privilege": "MAINTAIN",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "postgres",
+          "privilege": "REFERENCES",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "postgres",
+          "privilege": "SELECT",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "postgres",
+          "privilege": "TRIGGER",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "postgres",
+          "privilege": "TRUNCATE",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "postgres",
+          "privilege": "UPDATE",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "dashboard_user",
+          "privilege": "DELETE",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "dashboard_user",
+          "privilege": "INSERT",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "dashboard_user",
+          "privilege": "MAINTAIN",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "dashboard_user",
+          "privilege": "REFERENCES",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "dashboard_user",
+          "privilege": "SELECT",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "dashboard_user",
+          "privilege": "TRIGGER",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "dashboard_user",
+          "privilege": "TRUNCATE",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "dashboard_user",
+          "privilege": "UPDATE",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "supabase_realtime_admin",
+          "privilege": "DELETE",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "supabase_realtime_admin",
+          "privilege": "INSERT",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "supabase_realtime_admin",
+          "privilege": "MAINTAIN",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "supabase_realtime_admin",
+          "privilege": "REFERENCES",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "supabase_realtime_admin",
+          "privilege": "SELECT",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "supabase_realtime_admin",
+          "privilege": "TRIGGER",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "supabase_realtime_admin",
+          "privilege": "TRUNCATE",
+          "grantable": false,
+          "columns": null
+        },
+        {
+          "grantee": "supabase_realtime_admin",
+          "privilege": "UPDATE",
+          "grantable": false,
+          "columns": null
+        }
+      ],
+      "security_labels": []
+    },
+    "table:realtime.messages_2026_08_01": {
+      "schema": "realtime",
+      "name": "messages_2026_08_01",
+      "persistence": "p",
+      "row_security": false,
+      "force_row_security": false,
+      "has_indexes": true,
+      "has_rules": false,
+      "has_triggers": false,
+      "has_subclasses": false,
+      "is_populated": true,
+      "replica_identity": "d",
+      "replica_identity_index": null,
+      "is_partition": true,
+      "options": null,
+      "partition_bound": "FOR VALUES FROM ('2026-08-01 00:00:00') TO ('2026-08-02 00:00:00')",
+      "partition_by": null,
+      "owner": "supabase_realtime_admin",
+      "comment": null,
+      "parent_schema": "realtime",
+      "parent_name": "messages",
+      "columns": [
+        {
+          "name": "topic",
+          "position": 1,
+          "data_type": "text",
+          "data_type_str": "text",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": true,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": null,
+          "comment": null,
+          "security_labels": []
+        },
+        {
+          "name": "extension",
+          "position": 2,
+          "data_type": "text",
+          "data_type_str": "text",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": true,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": null,
+          "comment": null,
+          "security_labels": []
+        },
+        {
+          "name": "payload",
+          "position": 3,
+          "data_type": "jsonb",
+          "data_type_str": "jsonb",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": false,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": null,
+          "comment": null,
+          "security_labels": []
+        },
+        {
+          "name": "event",
+          "position": 4,
+          "data_type": "text",
+          "data_type_str": "text",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": false,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": null,
+          "comment": null,
+          "security_labels": []
+        },
+        {
+          "name": "private",
+          "position": 5,
+          "data_type": "boolean",
+          "data_type_str": "boolean",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": false,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": "false",
+          "comment": null,
+          "security_labels": []
+        },
+        {
+          "name": "updated_at",
+          "position": 6,
+          "data_type": "timestamp without time zone",
+          "data_type_str": "timestamp without time zone",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": true,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": "now()",
+          "comment": null,
+          "security_labels": []
+        },
+        {
+          "name": "inserted_at",
+          "position": 7,
+          "data_type": "timestamp without time zone",
+          "data_type_str": "timestamp without time zone",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": true,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": "now()",
+          "comment": null,
+          "security_labels": []
+        },
+        {
+          "name": "id",
+          "position": 8,
+          "data_type": "uuid",
+          "data_type_str": "uuid",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": true,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": "gen_random_uuid()",
+          "comment": null,
+          "security_labels": []
+        },
+        {
+          "name": "binary_payload",
+          "position": 9,
+          "data_type": "bytea",
+          "data_type_str": "bytea",
+          "is_custom_type": false,
+          "custom_type_type": null,
+          "custom_type_category": null,
+          "custom_type_schema": null,
+          "custom_type_name": null,
+          "not_null": false,
+          "is_identity": false,
+          "is_identity_always": false,
+          "is_generated": false,
+          "collation": null,
+          "default": null,
+          "comment": null,
+          "security_labels": []
+        }
+      ],
+      "constraints": [
+        {
+          "name": "messages_2026_08_01_pkey",
           "constraint_type": "p",
           "deferrable": false,
           "initially_deferred": false,
@@ -48875,66 +48913,6 @@
       "deptype": "n"
     },
     {
-      "dependent_stable_id": "acl:table:realtime.messages_2026_07_26::grantee:dashboard_user",
-      "referenced_stable_id": "role:dashboard_user",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "acl:table:realtime.messages_2026_07_26::grantee:dashboard_user",
-      "referenced_stable_id": "table:realtime.messages_2026_07_26",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "acl:table:realtime.messages_2026_07_26::grantee:postgres",
-      "referenced_stable_id": "role:postgres",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "acl:table:realtime.messages_2026_07_26::grantee:postgres",
-      "referenced_stable_id": "table:realtime.messages_2026_07_26",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "acl:table:realtime.messages_2026_07_26::grantee:supabase_realtime_admin",
-      "referenced_stable_id": "role:supabase_realtime_admin",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "acl:table:realtime.messages_2026_07_26::grantee:supabase_realtime_admin",
-      "referenced_stable_id": "table:realtime.messages_2026_07_26",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "acl:table:realtime.messages_2026_07_27::grantee:dashboard_user",
-      "referenced_stable_id": "role:dashboard_user",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "acl:table:realtime.messages_2026_07_27::grantee:dashboard_user",
-      "referenced_stable_id": "table:realtime.messages_2026_07_27",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "acl:table:realtime.messages_2026_07_27::grantee:postgres",
-      "referenced_stable_id": "role:postgres",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "acl:table:realtime.messages_2026_07_27::grantee:postgres",
-      "referenced_stable_id": "table:realtime.messages_2026_07_27",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "acl:table:realtime.messages_2026_07_27::grantee:supabase_realtime_admin",
-      "referenced_stable_id": "role:supabase_realtime_admin",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "acl:table:realtime.messages_2026_07_27::grantee:supabase_realtime_admin",
-      "referenced_stable_id": "table:realtime.messages_2026_07_27",
-      "deptype": "n"
-    },
-    {
       "dependent_stable_id": "acl:table:realtime.messages_2026_07_28::grantee:dashboard_user",
       "referenced_stable_id": "role:dashboard_user",
       "deptype": "n"
@@ -49022,6 +49000,66 @@
     {
       "dependent_stable_id": "acl:table:realtime.messages_2026_07_30::grantee:supabase_realtime_admin",
       "referenced_stable_id": "table:realtime.messages_2026_07_30",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "acl:table:realtime.messages_2026_07_31::grantee:dashboard_user",
+      "referenced_stable_id": "role:dashboard_user",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "acl:table:realtime.messages_2026_07_31::grantee:dashboard_user",
+      "referenced_stable_id": "table:realtime.messages_2026_07_31",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "acl:table:realtime.messages_2026_07_31::grantee:postgres",
+      "referenced_stable_id": "role:postgres",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "acl:table:realtime.messages_2026_07_31::grantee:postgres",
+      "referenced_stable_id": "table:realtime.messages_2026_07_31",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "acl:table:realtime.messages_2026_07_31::grantee:supabase_realtime_admin",
+      "referenced_stable_id": "role:supabase_realtime_admin",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "acl:table:realtime.messages_2026_07_31::grantee:supabase_realtime_admin",
+      "referenced_stable_id": "table:realtime.messages_2026_07_31",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "acl:table:realtime.messages_2026_08_01::grantee:dashboard_user",
+      "referenced_stable_id": "role:dashboard_user",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "acl:table:realtime.messages_2026_08_01::grantee:dashboard_user",
+      "referenced_stable_id": "table:realtime.messages_2026_08_01",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "acl:table:realtime.messages_2026_08_01::grantee:postgres",
+      "referenced_stable_id": "role:postgres",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "acl:table:realtime.messages_2026_08_01::grantee:postgres",
+      "referenced_stable_id": "table:realtime.messages_2026_08_01",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "acl:table:realtime.messages_2026_08_01::grantee:supabase_realtime_admin",
+      "referenced_stable_id": "role:supabase_realtime_admin",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "acl:table:realtime.messages_2026_08_01::grantee:supabase_realtime_admin",
+      "referenced_stable_id": "table:realtime.messages_2026_08_01",
       "deptype": "n"
     },
     {
@@ -50212,12 +50250,12 @@
     {
       "dependent_stable_id": "constraint:_realtime.tenants.jwt_secret_or_jwt_jwks_required",
       "referenced_stable_id": "column:_realtime.tenants.jwt_jwks",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:_realtime.tenants.jwt_secret_or_jwt_jwks_required",
       "referenced_stable_id": "column:_realtime.tenants.jwt_jwks",
-      "deptype": "a"
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:_realtime.tenants.jwt_secret_or_jwt_jwks_required",
@@ -50252,22 +50290,22 @@
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_authorization_url_length",
       "referenced_stable_id": "column:auth.custom_oauth_providers.authorization_url",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_authorization_url_length",
       "referenced_stable_id": "column:auth.custom_oauth_providers.authorization_url",
-      "deptype": "a"
-    },
-    {
-      "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_client_id_length",
-      "referenced_stable_id": "column:auth.custom_oauth_providers.client_id",
       "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_client_id_length",
       "referenced_stable_id": "column:auth.custom_oauth_providers.client_id",
       "deptype": "a"
+    },
+    {
+      "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_client_id_length",
+      "referenced_stable_id": "column:auth.custom_oauth_providers.client_id",
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_discovery_url_length",
@@ -50282,12 +50320,12 @@
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_identifier_format",
       "referenced_stable_id": "column:auth.custom_oauth_providers.identifier",
-      "deptype": "a"
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_identifier_format",
       "referenced_stable_id": "column:auth.custom_oauth_providers.identifier",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_identifier_key",
@@ -50307,12 +50345,12 @@
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_jwks_uri_https",
       "referenced_stable_id": "column:auth.custom_oauth_providers.jwks_uri",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_jwks_uri_https",
       "referenced_stable_id": "column:auth.custom_oauth_providers.jwks_uri",
-      "deptype": "a"
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_jwks_uri_length",
@@ -50337,12 +50375,12 @@
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_oauth2_requires_endpoints",
       "referenced_stable_id": "column:auth.custom_oauth_providers.authorization_url",
-      "deptype": "a"
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_oauth2_requires_endpoints",
       "referenced_stable_id": "column:auth.custom_oauth_providers.authorization_url",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_oauth2_requires_endpoints",
@@ -50377,12 +50415,12 @@
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_oidc_discovery_url_https",
       "referenced_stable_id": "column:auth.custom_oauth_providers.discovery_url",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_oidc_discovery_url_https",
       "referenced_stable_id": "column:auth.custom_oauth_providers.discovery_url",
-      "deptype": "a"
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_oidc_discovery_url_https",
@@ -50407,22 +50445,22 @@
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_oidc_issuer_https",
       "referenced_stable_id": "column:auth.custom_oauth_providers.provider_type",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_oidc_issuer_https",
       "referenced_stable_id": "column:auth.custom_oauth_providers.provider_type",
-      "deptype": "a"
-    },
-    {
-      "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_oidc_requires_issuer",
-      "referenced_stable_id": "column:auth.custom_oauth_providers.issuer",
       "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_oidc_requires_issuer",
       "referenced_stable_id": "column:auth.custom_oauth_providers.issuer",
       "deptype": "a"
+    },
+    {
+      "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_oidc_requires_issuer",
+      "referenced_stable_id": "column:auth.custom_oauth_providers.issuer",
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_oidc_requires_issuer",
@@ -50442,22 +50480,22 @@
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_provider_type_check",
       "referenced_stable_id": "column:auth.custom_oauth_providers.provider_type",
-      "deptype": "a"
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_provider_type_check",
       "referenced_stable_id": "column:auth.custom_oauth_providers.provider_type",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_token_url_https",
-      "referenced_stable_id": "column:auth.custom_oauth_providers.token_url",
       "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_token_url_https",
       "referenced_stable_id": "column:auth.custom_oauth_providers.token_url",
       "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_token_url_https",
+      "referenced_stable_id": "column:auth.custom_oauth_providers.token_url",
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_token_url_length",
@@ -50482,12 +50520,12 @@
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_userinfo_url_length",
       "referenced_stable_id": "column:auth.custom_oauth_providers.userinfo_url",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:auth.custom_oauth_providers.custom_oauth_providers_userinfo_url_length",
       "referenced_stable_id": "column:auth.custom_oauth_providers.userinfo_url",
-      "deptype": "a"
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:auth.flow_state.flow_state_pkey",
@@ -50632,12 +50670,12 @@
     {
       "dependent_stable_id": "constraint:auth.oauth_authorizations.oauth_authorizations_authorization_code_length",
       "referenced_stable_id": "column:auth.oauth_authorizations.authorization_code",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:auth.oauth_authorizations.oauth_authorizations_authorization_code_length",
       "referenced_stable_id": "column:auth.oauth_authorizations.authorization_code",
-      "deptype": "a"
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:auth.oauth_authorizations.oauth_authorizations_authorization_id_key",
@@ -50667,12 +50705,12 @@
     {
       "dependent_stable_id": "constraint:auth.oauth_authorizations.oauth_authorizations_code_challenge_length",
       "referenced_stable_id": "column:auth.oauth_authorizations.code_challenge",
-      "deptype": "a"
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:auth.oauth_authorizations.oauth_authorizations_code_challenge_length",
       "referenced_stable_id": "column:auth.oauth_authorizations.code_challenge",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:auth.oauth_authorizations.oauth_authorizations_expires_at_future",
@@ -50742,12 +50780,12 @@
     {
       "dependent_stable_id": "constraint:auth.oauth_authorizations.oauth_authorizations_state_length",
       "referenced_stable_id": "column:auth.oauth_authorizations.state",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:auth.oauth_authorizations.oauth_authorizations_state_length",
       "referenced_stable_id": "column:auth.oauth_authorizations.state",
-      "deptype": "a"
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:auth.oauth_authorizations.oauth_authorizations_user_id_fkey",
@@ -50777,12 +50815,12 @@
     {
       "dependent_stable_id": "constraint:auth.oauth_clients.oauth_clients_client_name_length",
       "referenced_stable_id": "column:auth.oauth_clients.client_name",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:auth.oauth_clients.oauth_clients_client_name_length",
       "referenced_stable_id": "column:auth.oauth_clients.client_name",
-      "deptype": "a"
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:auth.oauth_clients.oauth_clients_client_uri_length",
@@ -50812,12 +50850,12 @@
     {
       "dependent_stable_id": "constraint:auth.oauth_clients.oauth_clients_token_endpoint_auth_method_check",
       "referenced_stable_id": "column:auth.oauth_clients.token_endpoint_auth_method",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:auth.oauth_clients.oauth_clients_token_endpoint_auth_method_check",
       "referenced_stable_id": "column:auth.oauth_clients.token_endpoint_auth_method",
-      "deptype": "a"
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:auth.oauth_consents.oauth_consents_client_id_fkey",
@@ -50922,12 +50960,12 @@
     {
       "dependent_stable_id": "constraint:auth.one_time_tokens.one_time_tokens_token_hash_check",
       "referenced_stable_id": "column:auth.one_time_tokens.token_hash",
-      "deptype": "a"
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:auth.one_time_tokens.one_time_tokens_token_hash_check",
       "referenced_stable_id": "column:auth.one_time_tokens.token_hash",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:auth.one_time_tokens.one_time_tokens_user_id_fkey",
@@ -50992,12 +51030,12 @@
     {
       "dependent_stable_id": "constraint:auth.saml_providers.\"metadata_url not empty\"",
       "referenced_stable_id": "column:auth.saml_providers.metadata_url",
-      "deptype": "a"
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:auth.saml_providers.\"metadata_url not empty\"",
       "referenced_stable_id": "column:auth.saml_providers.metadata_url",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:auth.saml_providers.\"metadata_xml not empty\"",
@@ -51042,12 +51080,12 @@
     {
       "dependent_stable_id": "constraint:auth.saml_relay_states.\"request_id not empty\"",
       "referenced_stable_id": "column:auth.saml_relay_states.request_id",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:auth.saml_relay_states.\"request_id not empty\"",
       "referenced_stable_id": "column:auth.saml_relay_states.request_id",
-      "deptype": "a"
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:auth.saml_relay_states.saml_relay_states_flow_state_id_fkey",
@@ -51192,12 +51230,12 @@
     {
       "dependent_stable_id": "constraint:auth.sso_providers.\"resource_id not empty\"",
       "referenced_stable_id": "column:auth.sso_providers.resource_id",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:auth.sso_providers.\"resource_id not empty\"",
       "referenced_stable_id": "column:auth.sso_providers.resource_id",
-      "deptype": "a"
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:auth.sso_providers.sso_providers_pkey",
@@ -51490,66 +51528,6 @@
       "deptype": "a"
     },
     {
-      "dependent_stable_id": "constraint:realtime.messages_2026_07_26.messages_2026_07_26_pkey",
-      "referenced_stable_id": "column:realtime.messages_2026_07_26.id",
-      "deptype": "a"
-    },
-    {
-      "dependent_stable_id": "constraint:realtime.messages_2026_07_26.messages_2026_07_26_pkey",
-      "referenced_stable_id": "column:realtime.messages_2026_07_26.inserted_at",
-      "deptype": "a"
-    },
-    {
-      "dependent_stable_id": "constraint:realtime.messages_2026_07_26.messages_payload_exclusive",
-      "referenced_stable_id": "column:realtime.messages_2026_07_26.binary_payload",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "constraint:realtime.messages_2026_07_26.messages_payload_exclusive",
-      "referenced_stable_id": "column:realtime.messages_2026_07_26.binary_payload",
-      "deptype": "a"
-    },
-    {
-      "dependent_stable_id": "constraint:realtime.messages_2026_07_26.messages_payload_exclusive",
-      "referenced_stable_id": "column:realtime.messages_2026_07_26.payload",
-      "deptype": "a"
-    },
-    {
-      "dependent_stable_id": "constraint:realtime.messages_2026_07_26.messages_payload_exclusive",
-      "referenced_stable_id": "column:realtime.messages_2026_07_26.payload",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "constraint:realtime.messages_2026_07_27.messages_2026_07_27_pkey",
-      "referenced_stable_id": "column:realtime.messages_2026_07_27.id",
-      "deptype": "a"
-    },
-    {
-      "dependent_stable_id": "constraint:realtime.messages_2026_07_27.messages_2026_07_27_pkey",
-      "referenced_stable_id": "column:realtime.messages_2026_07_27.inserted_at",
-      "deptype": "a"
-    },
-    {
-      "dependent_stable_id": "constraint:realtime.messages_2026_07_27.messages_payload_exclusive",
-      "referenced_stable_id": "column:realtime.messages_2026_07_27.binary_payload",
-      "deptype": "a"
-    },
-    {
-      "dependent_stable_id": "constraint:realtime.messages_2026_07_27.messages_payload_exclusive",
-      "referenced_stable_id": "column:realtime.messages_2026_07_27.binary_payload",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "constraint:realtime.messages_2026_07_27.messages_payload_exclusive",
-      "referenced_stable_id": "column:realtime.messages_2026_07_27.payload",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "constraint:realtime.messages_2026_07_27.messages_payload_exclusive",
-      "referenced_stable_id": "column:realtime.messages_2026_07_27.payload",
-      "deptype": "a"
-    },
-    {
       "dependent_stable_id": "constraint:realtime.messages_2026_07_28.messages_2026_07_28_pkey",
       "referenced_stable_id": "column:realtime.messages_2026_07_28.id",
       "deptype": "a"
@@ -51562,12 +51540,12 @@
     {
       "dependent_stable_id": "constraint:realtime.messages_2026_07_28.messages_payload_exclusive",
       "referenced_stable_id": "column:realtime.messages_2026_07_28.binary_payload",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:realtime.messages_2026_07_28.messages_payload_exclusive",
       "referenced_stable_id": "column:realtime.messages_2026_07_28.binary_payload",
-      "deptype": "a"
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:realtime.messages_2026_07_28.messages_payload_exclusive",
@@ -51602,12 +51580,12 @@
     {
       "dependent_stable_id": "constraint:realtime.messages_2026_07_29.messages_payload_exclusive",
       "referenced_stable_id": "column:realtime.messages_2026_07_29.payload",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:realtime.messages_2026_07_29.messages_payload_exclusive",
       "referenced_stable_id": "column:realtime.messages_2026_07_29.payload",
-      "deptype": "a"
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:realtime.messages_2026_07_30.messages_2026_07_30_pkey",
@@ -51622,11 +51600,16 @@
     {
       "dependent_stable_id": "constraint:realtime.messages_2026_07_30.messages_payload_exclusive",
       "referenced_stable_id": "column:realtime.messages_2026_07_30.binary_payload",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:realtime.messages_2026_07_30.messages_payload_exclusive",
       "referenced_stable_id": "column:realtime.messages_2026_07_30.binary_payload",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "constraint:realtime.messages_2026_07_30.messages_payload_exclusive",
+      "referenced_stable_id": "column:realtime.messages_2026_07_30.payload",
       "deptype": "a"
     },
     {
@@ -51635,8 +51618,63 @@
       "deptype": "n"
     },
     {
-      "dependent_stable_id": "constraint:realtime.messages_2026_07_30.messages_payload_exclusive",
-      "referenced_stable_id": "column:realtime.messages_2026_07_30.payload",
+      "dependent_stable_id": "constraint:realtime.messages_2026_07_31.messages_2026_07_31_pkey",
+      "referenced_stable_id": "column:realtime.messages_2026_07_31.id",
+      "deptype": "a"
+    },
+    {
+      "dependent_stable_id": "constraint:realtime.messages_2026_07_31.messages_2026_07_31_pkey",
+      "referenced_stable_id": "column:realtime.messages_2026_07_31.inserted_at",
+      "deptype": "a"
+    },
+    {
+      "dependent_stable_id": "constraint:realtime.messages_2026_07_31.messages_payload_exclusive",
+      "referenced_stable_id": "column:realtime.messages_2026_07_31.binary_payload",
+      "deptype": "a"
+    },
+    {
+      "dependent_stable_id": "constraint:realtime.messages_2026_07_31.messages_payload_exclusive",
+      "referenced_stable_id": "column:realtime.messages_2026_07_31.binary_payload",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "constraint:realtime.messages_2026_07_31.messages_payload_exclusive",
+      "referenced_stable_id": "column:realtime.messages_2026_07_31.payload",
+      "deptype": "a"
+    },
+    {
+      "dependent_stable_id": "constraint:realtime.messages_2026_07_31.messages_payload_exclusive",
+      "referenced_stable_id": "column:realtime.messages_2026_07_31.payload",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "constraint:realtime.messages_2026_08_01.messages_2026_08_01_pkey",
+      "referenced_stable_id": "column:realtime.messages_2026_08_01.id",
+      "deptype": "a"
+    },
+    {
+      "dependent_stable_id": "constraint:realtime.messages_2026_08_01.messages_2026_08_01_pkey",
+      "referenced_stable_id": "column:realtime.messages_2026_08_01.inserted_at",
+      "deptype": "a"
+    },
+    {
+      "dependent_stable_id": "constraint:realtime.messages_2026_08_01.messages_payload_exclusive",
+      "referenced_stable_id": "column:realtime.messages_2026_08_01.binary_payload",
+      "deptype": "a"
+    },
+    {
+      "dependent_stable_id": "constraint:realtime.messages_2026_08_01.messages_payload_exclusive",
+      "referenced_stable_id": "column:realtime.messages_2026_08_01.binary_payload",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "constraint:realtime.messages_2026_08_01.messages_payload_exclusive",
+      "referenced_stable_id": "column:realtime.messages_2026_08_01.payload",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "constraint:realtime.messages_2026_08_01.messages_payload_exclusive",
+      "referenced_stable_id": "column:realtime.messages_2026_08_01.payload",
       "deptype": "a"
     },
     {
@@ -51652,12 +51690,12 @@
     {
       "dependent_stable_id": "constraint:realtime.messages.messages_payload_exclusive",
       "referenced_stable_id": "column:realtime.messages.payload",
-      "deptype": "n"
+      "deptype": "a"
     },
     {
       "dependent_stable_id": "constraint:realtime.messages.messages_payload_exclusive",
       "referenced_stable_id": "column:realtime.messages.payload",
-      "deptype": "a"
+      "deptype": "n"
     },
     {
       "dependent_stable_id": "constraint:realtime.messages.messages_pkey",
@@ -55005,86 +55043,6 @@
       "deptype": "n"
     },
     {
-      "dependent_stable_id": "index:realtime.messages_2026_07_26.messages_2026_07_26_inserted_at_topic_idx",
-      "referenced_stable_id": "column:realtime.messages_2026_07_26.extension",
-      "deptype": "a"
-    },
-    {
-      "dependent_stable_id": "index:realtime.messages_2026_07_26.messages_2026_07_26_inserted_at_topic_idx",
-      "referenced_stable_id": "column:realtime.messages_2026_07_26.inserted_at",
-      "deptype": "a"
-    },
-    {
-      "dependent_stable_id": "index:realtime.messages_2026_07_26.messages_2026_07_26_inserted_at_topic_idx",
-      "referenced_stable_id": "column:realtime.messages_2026_07_26.private",
-      "deptype": "a"
-    },
-    {
-      "dependent_stable_id": "index:realtime.messages_2026_07_26.messages_2026_07_26_inserted_at_topic_idx",
-      "referenced_stable_id": "column:realtime.messages_2026_07_26.topic",
-      "deptype": "a"
-    },
-    {
-      "dependent_stable_id": "index:realtime.messages_2026_07_26.messages_2026_07_26_inserted_at_topic_idx",
-      "referenced_stable_id": "schema:realtime",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "index:realtime.messages_2026_07_26.messages_2026_07_26_inserted_at_topic_idx",
-      "referenced_stable_id": "table:realtime.messages_2026_07_26",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "index:realtime.messages_2026_07_26.messages_2026_07_26_pkey",
-      "referenced_stable_id": "schema:realtime",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "index:realtime.messages_2026_07_26.messages_2026_07_26_pkey",
-      "referenced_stable_id": "table:realtime.messages_2026_07_26",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "index:realtime.messages_2026_07_27.messages_2026_07_27_inserted_at_topic_idx",
-      "referenced_stable_id": "column:realtime.messages_2026_07_27.extension",
-      "deptype": "a"
-    },
-    {
-      "dependent_stable_id": "index:realtime.messages_2026_07_27.messages_2026_07_27_inserted_at_topic_idx",
-      "referenced_stable_id": "column:realtime.messages_2026_07_27.inserted_at",
-      "deptype": "a"
-    },
-    {
-      "dependent_stable_id": "index:realtime.messages_2026_07_27.messages_2026_07_27_inserted_at_topic_idx",
-      "referenced_stable_id": "column:realtime.messages_2026_07_27.private",
-      "deptype": "a"
-    },
-    {
-      "dependent_stable_id": "index:realtime.messages_2026_07_27.messages_2026_07_27_inserted_at_topic_idx",
-      "referenced_stable_id": "column:realtime.messages_2026_07_27.topic",
-      "deptype": "a"
-    },
-    {
-      "dependent_stable_id": "index:realtime.messages_2026_07_27.messages_2026_07_27_inserted_at_topic_idx",
-      "referenced_stable_id": "schema:realtime",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "index:realtime.messages_2026_07_27.messages_2026_07_27_inserted_at_topic_idx",
-      "referenced_stable_id": "table:realtime.messages_2026_07_27",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "index:realtime.messages_2026_07_27.messages_2026_07_27_pkey",
-      "referenced_stable_id": "schema:realtime",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "index:realtime.messages_2026_07_27.messages_2026_07_27_pkey",
-      "referenced_stable_id": "table:realtime.messages_2026_07_27",
-      "deptype": "n"
-    },
-    {
       "dependent_stable_id": "index:realtime.messages_2026_07_28.messages_2026_07_28_inserted_at_topic_idx",
       "referenced_stable_id": "column:realtime.messages_2026_07_28.extension",
       "deptype": "a"
@@ -55202,6 +55160,86 @@
     {
       "dependent_stable_id": "index:realtime.messages_2026_07_30.messages_2026_07_30_pkey",
       "referenced_stable_id": "table:realtime.messages_2026_07_30",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "index:realtime.messages_2026_07_31.messages_2026_07_31_inserted_at_topic_idx",
+      "referenced_stable_id": "column:realtime.messages_2026_07_31.extension",
+      "deptype": "a"
+    },
+    {
+      "dependent_stable_id": "index:realtime.messages_2026_07_31.messages_2026_07_31_inserted_at_topic_idx",
+      "referenced_stable_id": "column:realtime.messages_2026_07_31.inserted_at",
+      "deptype": "a"
+    },
+    {
+      "dependent_stable_id": "index:realtime.messages_2026_07_31.messages_2026_07_31_inserted_at_topic_idx",
+      "referenced_stable_id": "column:realtime.messages_2026_07_31.private",
+      "deptype": "a"
+    },
+    {
+      "dependent_stable_id": "index:realtime.messages_2026_07_31.messages_2026_07_31_inserted_at_topic_idx",
+      "referenced_stable_id": "column:realtime.messages_2026_07_31.topic",
+      "deptype": "a"
+    },
+    {
+      "dependent_stable_id": "index:realtime.messages_2026_07_31.messages_2026_07_31_inserted_at_topic_idx",
+      "referenced_stable_id": "schema:realtime",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "index:realtime.messages_2026_07_31.messages_2026_07_31_inserted_at_topic_idx",
+      "referenced_stable_id": "table:realtime.messages_2026_07_31",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "index:realtime.messages_2026_07_31.messages_2026_07_31_pkey",
+      "referenced_stable_id": "schema:realtime",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "index:realtime.messages_2026_07_31.messages_2026_07_31_pkey",
+      "referenced_stable_id": "table:realtime.messages_2026_07_31",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "index:realtime.messages_2026_08_01.messages_2026_08_01_inserted_at_topic_idx",
+      "referenced_stable_id": "column:realtime.messages_2026_08_01.extension",
+      "deptype": "a"
+    },
+    {
+      "dependent_stable_id": "index:realtime.messages_2026_08_01.messages_2026_08_01_inserted_at_topic_idx",
+      "referenced_stable_id": "column:realtime.messages_2026_08_01.inserted_at",
+      "deptype": "a"
+    },
+    {
+      "dependent_stable_id": "index:realtime.messages_2026_08_01.messages_2026_08_01_inserted_at_topic_idx",
+      "referenced_stable_id": "column:realtime.messages_2026_08_01.private",
+      "deptype": "a"
+    },
+    {
+      "dependent_stable_id": "index:realtime.messages_2026_08_01.messages_2026_08_01_inserted_at_topic_idx",
+      "referenced_stable_id": "column:realtime.messages_2026_08_01.topic",
+      "deptype": "a"
+    },
+    {
+      "dependent_stable_id": "index:realtime.messages_2026_08_01.messages_2026_08_01_inserted_at_topic_idx",
+      "referenced_stable_id": "schema:realtime",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "index:realtime.messages_2026_08_01.messages_2026_08_01_inserted_at_topic_idx",
+      "referenced_stable_id": "table:realtime.messages_2026_08_01",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "index:realtime.messages_2026_08_01.messages_2026_08_01_pkey",
+      "referenced_stable_id": "schema:realtime",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "index:realtime.messages_2026_08_01.messages_2026_08_01_pkey",
+      "referenced_stable_id": "table:realtime.messages_2026_08_01",
       "deptype": "n"
     },
     {
@@ -58165,36 +58203,6 @@
       "deptype": "n"
     },
     {
-      "dependent_stable_id": "table:realtime.messages_2026_07_26",
-      "referenced_stable_id": "role:supabase_realtime_admin",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "table:realtime.messages_2026_07_26",
-      "referenced_stable_id": "schema:realtime",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "table:realtime.messages_2026_07_26",
-      "referenced_stable_id": "table:realtime.messages",
-      "deptype": "a"
-    },
-    {
-      "dependent_stable_id": "table:realtime.messages_2026_07_27",
-      "referenced_stable_id": "role:supabase_realtime_admin",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "table:realtime.messages_2026_07_27",
-      "referenced_stable_id": "schema:realtime",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "table:realtime.messages_2026_07_27",
-      "referenced_stable_id": "table:realtime.messages",
-      "deptype": "a"
-    },
-    {
       "dependent_stable_id": "table:realtime.messages_2026_07_28",
       "referenced_stable_id": "role:supabase_realtime_admin",
       "deptype": "n"
@@ -58236,6 +58244,36 @@
     },
     {
       "dependent_stable_id": "table:realtime.messages_2026_07_30",
+      "referenced_stable_id": "table:realtime.messages",
+      "deptype": "a"
+    },
+    {
+      "dependent_stable_id": "table:realtime.messages_2026_07_31",
+      "referenced_stable_id": "role:supabase_realtime_admin",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "table:realtime.messages_2026_07_31",
+      "referenced_stable_id": "schema:realtime",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "table:realtime.messages_2026_07_31",
+      "referenced_stable_id": "table:realtime.messages",
+      "deptype": "a"
+    },
+    {
+      "dependent_stable_id": "table:realtime.messages_2026_08_01",
+      "referenced_stable_id": "role:supabase_realtime_admin",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "table:realtime.messages_2026_08_01",
+      "referenced_stable_id": "schema:realtime",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "table:realtime.messages_2026_08_01",
       "referenced_stable_id": "table:realtime.messages",
       "deptype": "a"
     },
@@ -59025,16 +59063,6 @@
       "deptype": "n"
     },
     {
-      "dependent_stable_id": "type:realtime._messages_2026_07_26",
-      "referenced_stable_id": "role:supabase_realtime_admin",
-      "deptype": "n"
-    },
-    {
-      "dependent_stable_id": "type:realtime._messages_2026_07_27",
-      "referenced_stable_id": "role:supabase_realtime_admin",
-      "deptype": "n"
-    },
-    {
       "dependent_stable_id": "type:realtime._messages_2026_07_28",
       "referenced_stable_id": "role:supabase_realtime_admin",
       "deptype": "n"
@@ -59046,6 +59074,16 @@
     },
     {
       "dependent_stable_id": "type:realtime._messages_2026_07_30",
+      "referenced_stable_id": "role:supabase_realtime_admin",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "type:realtime._messages_2026_07_31",
+      "referenced_stable_id": "role:supabase_realtime_admin",
+      "deptype": "n"
+    },
+    {
+      "dependent_stable_id": "type:realtime._messages_2026_08_01",
       "referenced_stable_id": "role:supabase_realtime_admin",
       "deptype": "n"
     },

@@ -32,6 +32,8 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
   const [filterKelasRekap, setFilterKelasRekap] = useState<string>('');
 
   // State Form Input Kasus
+  const [jenisInput, setJenisInput] = useState<'pelanggaran' | 'layanan_bimbingan'>('pelanggaran');
+  const [kategoriLayanan, setKategoriLayanan] = useState<'pribadi' | 'sosial' | 'akademik' | 'karir' | ''>('');
   const [formKasus, setFormKasus] = useState({
     id: '',
     student_id: '',
@@ -139,12 +141,16 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
     e.preventDefault();
     setLoading(true);
 
-    const payload = {
+    const payload: Record<string, any> = {
       user_id: parseInt(userId),
       student_id: parseInt(formKasus.student_id),
       kelas: formKasus.kelas,
-      kategori_kasus: formKasus.kategori_kasus,
-      detail_kasus: `[Jenis: ${formKasus.jenis_kasus}] [Bobot Poin: ${formKasus.bobot_pelanggaran}] ${formKasus.detail_kasus}`, 
+      jenis_input: jenisInput,
+      kategori_layanan: jenisInput === 'layanan_bimbingan' ? kategoriLayanan : null,
+      kategori_kasus: jenisInput === 'pelanggaran' ? formKasus.kategori_kasus : '',
+      detail_kasus: jenisInput === 'pelanggaran'
+        ? `[Jenis: ${formKasus.jenis_kasus}] [Bobot Poin: ${formKasus.bobot_pelanggaran}] ${formKasus.detail_kasus}`
+        : `[Layanan ${kategoriLayanan}] ${formKasus.detail_kasus}`,
       tindakan_penanganan: formKasus.tindakan_penanganan,
       status: formKasus.status,
       updated_at: new Date().toISOString()
@@ -185,6 +191,8 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
       setFormKasus({ id: '', student_id: '', kelas: '', kategori_kasus: '', jenis_kasus: '', bobot_pelanggaran: 0, detail_kasus: '', tindakan_penanganan: '', status: 'Sedang Dibina' });
       setIsEditKasus(false);
       setFilterKelasInput('');
+      setJenisInput('pelanggaran');
+      setKategoriLayanan('');
       fetchKasusBK();
     } catch (err: any) {
       toast.error(`Gagal menyimpan catatan: ${err.message}`);
@@ -239,7 +247,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
               <span className="text-sm font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
                 BK SPENSAWA
               </span>
-              <h2 className="text-lg sm:text-xl font-bold text-slate-800 mt-1.5">{isEditKasus ? '✏️ Edit Pembinaan' : '➕ Input Kasus Baru'}</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-slate-800 mt-1.5">{isEditKasus ? '✏️ Edit Pembinaan' : '➕ Input Layanan Bimbingan dan Konseling'}</h2>
             </div>
             <button 
               onClick={() => {
@@ -247,6 +255,8 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
                 setIsEditKasus(false);
                 setFormKasus({ id: '', student_id: '', kelas: '', kategori_kasus: '', jenis_kasus: '', bobot_pelanggaran: 0, detail_kasus: '', tindakan_penanganan: '', status: 'Sedang Dibina' });
                 setFilterKelasInput('');
+                setJenisInput('pelanggaran');
+                setKategoriLayanan('');
               }}
               className="text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer font-medium"
             >
@@ -289,53 +299,104 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
               </div>
             </div>
 
-            {/* FILTER TINGKAT KASUS (MEMUDAHKAN PENGGUNA HP) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[10px] font-semibold text-slate-600 mb-1">1. Filter Kategori Pelanggaran</label>
-                <select 
-                  value={formKasus.kategori_kasus} 
-                  onChange={(e) => {
-                    setFormKasus(prev => ({ ...prev, kategori_kasus: e.target.value, jenis_kasus: '', bobot_pelanggaran: 0 }));
-                  }} 
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white font-medium border-purple-200" required
-                >
-                  <option value="">-- Pilih Kategori --</option>
-                  <option value="ringan">Ringan</option>
-                  <option value="sedang">Sedang</option>
-                  <option value="berat">Berat</option>
-                  <option value="sangat berat">Sangat Berat / Kriminal</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-semibold text-slate-600 mb-1">2. Pilihan Kasus Spesifik (Terfilter)</label>
-                <select 
-                  value={formKasus.jenis_kasus} 
-                  onChange={(e) => handlePilihJenisKasus(e.target.value)} 
-                  disabled={!formKasus.kategori_kasus}
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white disabled:bg-slate-100 font-medium truncate" required
-                >
-                  <option value="">{formKasus.kategori_kasus ? `-- Pilih Kasus (${masterPelanggaranTerfilter.length}) --` : '-- Pilih Kategori Dahulu --'}</option>
-                  {masterPelanggaranTerfilter.map((p) => (
-                    <option key={p.id} value={p.jenis_kasus}>
-                      {p.jenis_kasus}
-                    </option>
-                  ))}
-                </select>
+            {/* JENIS INPUT: Pelanggaran / Layanan Bimbingan */}
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+              <label className="block text-[10px] font-bold text-slate-600 mb-2">Jenis Input</label>
+              <div className="flex gap-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="jenisInput"
+                    value="pelanggaran"
+                    checked={jenisInput === 'pelanggaran'}
+                    onChange={() => { setJenisInput('pelanggaran'); setKategoriLayanan(''); }}
+                    className="radio radio-sm radio-error"
+                  />
+                  <span className="text-sm font-semibold text-slate-700">Pelanggaran</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="jenisInput"
+                    value="layanan_bimbingan"
+                    checked={jenisInput === 'layanan_bimbingan'}
+                    onChange={() => setJenisInput('layanan_bimbingan')}
+                    className="radio radio-sm radio-primary"
+                  />
+                  <span className="text-sm font-semibold text-slate-700">Layanan Bimbingan</span>
+                </label>
               </div>
             </div>
 
-            {/* FIELD BOBOT OTOMATIS */}
-            <div>
-              <label className="block text-[10px] font-semibold text-slate-500 mb-1">Bobot Pelanggaran (Otomatis Poin dari Database)</label>
-              <input 
-                type="text" 
-                value={formKasus.bobot_pelanggaran ? `${formKasus.bobot_pelanggaran} Poin` : '0 Poin'}
-                disabled
-                className="w-full p-2.5 border border-slate-200 bg-slate-50 text-red-600 font-mono font-bold rounded-lg text-sm"
-              />
-            </div>
+            {/* PELANGGARAN: Filter tingkat kasus & bobot */}
+            {jenisInput === 'pelanggaran' && (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-semibold text-slate-600 mb-1">1. Filter Kategori Pelanggaran</label>
+                    <select 
+                      value={formKasus.kategori_kasus} 
+                      onChange={(e) => {
+                        setFormKasus(prev => ({ ...prev, kategori_kasus: e.target.value, jenis_kasus: '', bobot_pelanggaran: 0 }));
+                      }} 
+                      className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white font-medium border-purple-200" required
+                    >
+                      <option value="">-- Pilih Kategori --</option>
+                      <option value="ringan">Ringan</option>
+                      <option value="sedang">Sedang</option>
+                      <option value="berat">Berat</option>
+                      <option value="sangat berat">Sangat Berat / Kriminal</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-slate-600 mb-1">2. Pilihan Kasus Spesifik (Terfilter)</label>
+                    <select 
+                      value={formKasus.jenis_kasus} 
+                      onChange={(e) => handlePilihJenisKasus(e.target.value)} 
+                      disabled={!formKasus.kategori_kasus}
+                      className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white disabled:bg-slate-100 font-medium truncate" required
+                    >
+                      <option value="">{formKasus.kategori_kasus ? `-- Pilih Kasus (${masterPelanggaranTerfilter.length}) --` : '-- Pilih Kategori Dahulu --'}</option>
+                      {masterPelanggaranTerfilter.map((p) => (
+                        <option key={p.id} value={p.jenis_kasus}>
+                          {p.jenis_kasus}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* FIELD BOBOT OTOMATIS */}
+                <div>
+                  <label className="block text-[10px] font-semibold text-slate-500 mb-1">Bobot Pelanggaran (Otomatis Poin dari Database)</label>
+                  <input 
+                    type="text" 
+                    value={formKasus.bobot_pelanggaran ? `${formKasus.bobot_pelanggaran} Poin` : '0 Poin'}
+                    disabled
+                    className="w-full p-2.5 border border-slate-200 bg-slate-50 text-red-600 font-mono font-bold rounded-lg text-sm"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* LAYANAN BIMBINGAN: Kategori Layanan */}
+            {jenisInput === 'layanan_bimbingan' && (
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-600 mb-1">Kategori Layanan</label>
+                <select 
+                  value={kategoriLayanan} 
+                  onChange={(e) => setKategoriLayanan(e.target.value as any)} 
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white font-medium border-blue-200" required
+                >
+                  <option value="">-- Pilih Kategori Layanan --</option>
+                  <option value="pribadi">Pribadi</option>
+                  <option value="sosial">Sosial</option>
+                  <option value="akademik">Akademik</option>
+                  <option value="karir">Karir</option>
+                </select>
+              </div>
+            )}
 
             <div>
               <label className="block text-[10px] font-semibold text-slate-600 mb-1">Kronologi / Catatan Keterangan Tambahan</label>
@@ -343,7 +404,19 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
                 value={formKasus.detail_kasus} 
                 onChange={(e) => setFormKasus({ ...formKasus, detail_kasus: e.target.value })} 
                 className="w-full p-2 border border-slate-300 rounded-lg text-sm h-16 bg-white resize-none" required 
-                placeholder="Tulis kronologi kejadian..."
+                placeholder={
+                  jenisInput === 'pelanggaran'
+                    ? 'Tuliskan rincian pelanggaran, waktu kejadian, serta poin atau sanksi awal yang diberikan...'
+                    : kategoriLayanan === 'pribadi'
+                      ? 'Tuliskan fokus permasalahan pribadi siswa (emosi, kendala pribadi, dll)...'
+                      : kategoriLayanan === 'sosial'
+                        ? 'Tuliskan interaksi sosial, konflik teman sebaya, atau adaptasi lingkungan...'
+                        : kategoriLayanan === 'akademik'
+                          ? 'Tuliskan kendala belajar, motivasi nilai, atau kehadiran di kelas...'
+                          : kategoriLayanan === 'karir'
+                            ? 'Tuliskan konsultasi minat/bakat, perencanaan studi lanjut, atau cita-cita...'
+                            : 'Tuliskan kronologi kejadian...'
+                }
               />
             </div>
 
