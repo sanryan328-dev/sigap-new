@@ -57,38 +57,53 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp }: Guru
   }, [subMenuBK]);
 
   // ==========================================
-  // 🏫 FETCH KELAS BINAAN GURU BK
-  // Sinkron dengan JADWAL MENGAJAR guru BK dari tabel teaching_schedules.
-  // Dropdown kelas hanya berisi kelas yang ada di jadwal mengajar user_id login.
+  // 🏫 FETCH KELAS BINAAN GURU BK (SINKRONISASI KELAS)
+  // Menggabungkan data dari tabel teaching_schedules dan bk_assignments, lalu hapus duplikatnya.
   // ==========================================
   useEffect(() => {
     if (!userId) return;
     const rawUserId = typeof userId === 'string' ? parseInt(userId) : userId;
 
-    const fetchKelasBinaan = async () => {
+    const fetchSinkronisasiKelas = async () => {
       setLoadingKelasBinaan(true);
       try {
-        const { data, error } = await supabase
+        // 1. Ambil data dari teaching_schedules (Jadwal Mapel)
+        const { data: mapelData, error: mapelError } = await supabase
           .from('teaching_schedules')
           .select('kelas')
           .eq('user_id', rawUserId);
 
-        if (error) throw error;
+        if (mapelError) throw mapelError;
 
-        const daftar = new Set<string>();
-        (data || []).forEach((s: any) => { if (s.kelas) daftar.add(s.kelas); });
+        // 2. Ambil data dari bk_assignments (Penugasan BK) - abaikan jika tabel tidak ada
+        const { data: bkData } = await supabase
+          .from('bk_assignments')
+          .select('kelas')
+          .eq('user_id', rawUserId);
 
-        const list = Array.from(daftar).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-        setKelasBinaan(list);
+        // Gabungkan array dari kedua tabel (tambahkan fallback array kosong jika error/null)
+        const combinedClasses = [
+          ...(mapelData?.map((item: any) => item.kelas) || []),
+          ...(bkData?.map((item: any) => item.kelas) || [])
+        ];
+
+        // 3. Hapus duplikat, hapus nilai kosong, dan urutkan abjad
+        const uniqueClasses = Array.from(new Set(combinedClasses))
+          .map((k: any) => k?.trim())
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+        // 4. Set ke state dropdown
+        setKelasBinaan(uniqueClasses);
       } catch (err: any) {
-        console.warn('Gagal memuat kelas binaan BK:', err.message);
+        console.error('Gagal sinkronisasi data kelas BK:', err);
         setKelasBinaan([]);
       } finally {
         setLoadingKelasBinaan(false);
       }
     };
 
-    fetchKelasBinaan();
+    fetchSinkronisasiKelas();
   }, [userId]);
 
   // ==========================================

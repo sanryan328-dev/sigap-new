@@ -52,6 +52,55 @@ export default function GuruMapelDashboard({
 
   const [exportModalOpen, setExportModalOpen] = useState(false);
 
+  const user = useAuthStore((s) => s.user);
+  const [availableClasses, setAvailableClasses] = useState<string[]>([]);
+  const [loadingClasses, setLoadingClasses] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchSinkronisasiKelas = async () => {
+      setLoadingClasses(true);
+      try {
+        // 1. Ambil data dari teaching_schedules (Jadwal Mapel)
+        const { data: mapelData, error: mapelError } = await supabase
+          .from('teaching_schedules')
+          .select('kelas')
+          .eq('user_id', user.id);
+
+        if (mapelError) throw mapelError;
+
+        // 2. Ambil data dari bk_assignments (Penugasan BK) - abaikan jika tabel tidak ada
+        const { data: bkData, error: bkError } = await supabase
+          .from('bk_assignments')
+          .select('kelas')
+          .eq('user_id', user.id);
+
+        // Gabungkan array dari kedua tabel (tambahkan fallback array kosong jika error/null)
+        const combinedClasses = [
+          ...(mapelData?.map((item: any) => item.kelas) || []),
+          ...(bkData?.map((item: any) => item.kelas) || [])
+        ];
+
+        // 3. Hapus duplikat, hapus nilai kosong, dan urutkan abjad
+        const uniqueClasses = Array.from(new Set(combinedClasses))
+          .map((k: any) => k?.trim())
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+        // 4. Set ke state dropdown
+        setAvailableClasses(uniqueClasses);
+      } catch (err) {
+        console.error('Gagal sinkronisasi data kelas:', err);
+        setAvailableClasses([]);
+      } finally {
+        setLoadingClasses(false);
+      }
+    };
+
+    fetchSinkronisasiKelas();
+  }, [user?.id]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -144,18 +193,22 @@ export default function GuruMapelDashboard({
                     className="select select-bordered w-full appearance-none pr-8 text-sm disabled:bg-slate-100"
                   >
                     <option value="">— Pilih Kelas —</option>
-                    {kelasOptions.map((k) => (
-                      <option key={k} value={k}>{k}</option>
-                    ))}
+                    {loadingClasses ? (
+                      <option value="" disabled>Memuat kelas...</option>
+                    ) : (
+                      availableClasses.map((k) => (
+                        <option key={k} value={k}>{k}</option>
+                      ))
+                    )}
                   </select>
                   <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                 </div>
               </div>
             </div>
 
-            {selectedMapel && kelasOptions.length === 0 && (
+            {selectedMapel && !loadingClasses && availableClasses.length === 0 && (
               <p className="text-sm text-amber-600">
-                Tidak ada kelas yang terdaftar untuk mapel {selectedMapel}. Silakan hubungi admin.
+                Tidak ada kelas yang terdaftar untuk Anda. Silakan hubungi admin.
               </p>
             )}
           </div>
