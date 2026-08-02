@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, ClipboardCheck, LogOut, ChevronDown, Repeat, History, BarChart3, FileSpreadsheet, Download } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import { BookOpen, ClipboardCheck, LogOut, ChevronDown, Repeat, History, BarChart3, FileSpreadsheet } from 'lucide-react';
 import GrafikNilai from './GrafikNilai';
+import ExportScoreModal from './ExportScoreModal';
 import { supabase } from '../supabaseClient';
 import { useAuthStore } from '../store/useAuthStore';
 import { toast } from 'sonner';
@@ -12,7 +12,7 @@ interface MapelKelas {
   kelas: string[];
 }
 
-type SubMenuGuruMapel = 'jurnal' | 'nilai' | 'riwayat-nilai' | 'riwayat-jurnal' | 'rekap-kehadiran' | 'unduh-nilai' | null;
+type SubMenuGuruMapel = 'jurnal' | 'nilai' | 'riwayat-nilai' | 'riwayat-jurnal' | 'rekap-kehadiran' | null;
 
 interface GuruMapelDashboardProps {
   setSubMenu: (menu: SubMenuGuruMapel) => void;
@@ -33,6 +33,7 @@ export default function GuruMapelDashboard({
   setCurrentRole,
   onSelectMapelKelas,
   mataPelajaranData,
+  daftarKelas,
   onSwitchRole,
 }: GuruMapelDashboardProps) {
   const profile = useAuthStore((s) => s.profile);
@@ -49,107 +50,7 @@ export default function GuruMapelDashboard({
     setSubMenu(menu);
   };
 
-  // ── Pusat Unduh Laporan Mandiri ──
-  const [unduhKelas, setUnduhKelas] = useState('');
-  const [unduhJenisPenilaian, setUnduhJenisPenilaian] = useState('ALL');
-  const [listKelasGuru, setListKelasGuru] = useState<string[]>([]);
-  const [listPenilaian, setListPenilaian] = useState<string[]>([]);
-  const [loadingUnduh, setLoadingUnduh] = useState(false);
-
-  useEffect(() => {
-    if (!profile?.user_id) return;
-    const rawUserId = typeof profile.user_id === 'string' ? parseInt(profile.user_id) : profile.user_id;
-    const fetchKelas = async () => {
-      const { data } = await supabase
-        .from('student_scores')
-        .select('kelas')
-        .eq('user_id', rawUserId);
-      if (data) {
-        const unique = [...new Set(data.map(r => r.kelas).filter(Boolean))] as string[];
-        unique.sort();
-        setListKelasGuru(unique);
-      }
-    };
-    fetchKelas();
-  }, [profile?.user_id]);
-
-  useEffect(() => {
-    if (!unduhKelas || !profile?.user_id) {
-      setListPenilaian([]);
-      setUnduhJenisPenilaian('ALL');
-      return;
-    }
-    const rawUserId = typeof profile.user_id === 'string' ? parseInt(profile.user_id) : profile.user_id;
-    const fetchPenilaian = async () => {
-      const { data } = await supabase
-        .from('student_scores')
-        .select('jenis_penilaian')
-        .eq('kelas', unduhKelas)
-        .eq('user_id', rawUserId);
-      if (data) {
-        const unique = [...new Set(data.map(r => r.jenis_penilaian).filter(Boolean))] as string[];
-        unique.sort();
-        setListPenilaian(unique);
-        setUnduhJenisPenilaian('ALL');
-      }
-    };
-    fetchPenilaian();
-  }, [unduhKelas, profile?.user_id]);
-
-  const handleUnduhLaporan = async () => {
-    if (!unduhKelas || !profile?.user_id) return;
-    setLoadingUnduh(true);
-    try {
-      const rawUserId = typeof profile.user_id === 'string' ? parseInt(profile.user_id) : profile.user_id;
-      let query = supabase
-        .from('student_scores')
-        .select('student_id, jenis_penilaian, nilai')
-        .eq('user_id', rawUserId)
-        .eq('kelas', unduhKelas);
-      if (unduhJenisPenilaian !== 'ALL') {
-        query = query.eq('jenis_penilaian', unduhJenisPenilaian);
-      }
-      const { data: scores, error } = await query;
-      if (error) throw error;
-      if (!scores || scores.length === 0) {
-        toast.error('Tidak ada data nilai untuk kriteria yang dipilih.');
-        return;
-      }
-      const studentIds = [...new Set(scores.map((s: any) => s.student_id))];
-      const { data: students } = await supabase
-        .from('students')
-        .select('id, nama_siswa, nisn')
-        .in('id', studentIds);
-      const studentMap = new Map<number, { nama_siswa: string; nisn: string }>();
-      if (students) students.forEach((s: any) => studentMap.set(s.id, { nama_siswa: s.nama_siswa, nisn: s.nisn }));
-
-      const pivotedMap = new Map<number, Record<string, number>>();
-      const infoMap = new Map<number, { nama_siswa: string; nisn: string }>();
-      scores.forEach((s: any) => {
-        if (!pivotedMap.has(s.student_id)) pivotedMap.set(s.student_id, {});
-        pivotedMap.get(s.student_id)![s.jenis_penilaian] = s.nilai;
-        if (!infoMap.has(s.student_id)) {
-          const info = studentMap.get(s.student_id);
-          infoMap.set(s.student_id, { nama_siswa: info?.nama_siswa || `(id: ${s.student_id})`, nisn: info?.nisn || '' });
-        }
-      });
-      const sortedIds = Array.from(pivotedMap.keys()).sort((a, b) => (infoMap.get(a)?.nama_siswa || '').localeCompare(infoMap.get(b)?.nama_siswa || ''));
-      const allJenis = [...new Set(scores.map((s: any) => s.jenis_penilaian))].sort();
-      const header = ['Nama Siswa', 'NISN', ...allJenis];
-      const rows = sortedIds.map(id => [infoMap.get(id)!.nama_siswa, infoMap.get(id)!.nisn, ...allJenis.map(j => pivotedMap.get(id)![j] ?? '')]);
-      const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Rekap Nilai');
-      ws['!cols'] = [{ wch: 30 }, { wch: 15 }, ...allJenis.map(() => ({ wch: 12 }))];
-      const label = unduhJenisPenilaian === 'ALL' ? 'Semua_Penilaian' : unduhJenisPenilaian.replace(/\s+/g, '_');
-      XLSX.writeFile(wb, `Rekap_Nilai_${unduhKelas}_${label}.xlsx`);
-      toast.success('File Excel berhasil diunduh!');
-    } catch (err: any) {
-      toast.error('Gagal mengunduh: ' + err.message);
-    } finally {
-      setLoadingUnduh(false);
-    }
-  };
+  const [exportModalOpen, setExportModalOpen] = useState(false);
 
   return (
     <motion.div
@@ -181,6 +82,10 @@ export default function GuruMapelDashboard({
                 Beralih Peran
               </button>
             )}
+            <button onClick={() => setExportModalOpen(true)} className="btn btn-soft btn-accent btn-sm">
+              <FileSpreadsheet className="size-3.5" />
+              Pusat Unduh
+            </button>
             <button onClick={() => setCurrentRole(null)} className="btn btn-ghost btn-sm">
               <LogOut className="size-4" />
               Kembali
@@ -253,74 +158,6 @@ export default function GuruMapelDashboard({
                 Tidak ada kelas yang terdaftar untuk mapel {selectedMapel}. Silakan hubungi admin.
               </p>
             )}
-          </div>
-        </motion.div>
-
-        {/* ── Pusat Unduh Laporan Mandiri ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="card border border-emerald-200/60 bg-white shadow-lg"
-        >
-          <div className="card-body gap-5">
-            <div className="flex items-center gap-3">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-xs">
-                <FileSpreadsheet className="size-4" />
-              </div>
-              <h3 className="card-title text-sm text-slate-900">Pusat Unduh Laporan Mandiri</h3>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="form-control w-full">
-                <label className="label py-1">
-                  <span className="label-text text-sm font-semibold">Pilih Kelas</span>
-                </label>
-                <select
-                  value={unduhKelas}
-                  onChange={(e) => setUnduhKelas(e.target.value)}
-                  className="select select-bordered w-full text-sm"
-                >
-                  <option value="">— Pilih Kelas —</option>
-                  {listKelasGuru.map((k) => (
-                    <option key={k} value={k}>{k}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-control w-full">
-                <label className="label py-1">
-                  <span className="label-text text-sm font-semibold">Jenis Penilaian</span>
-                </label>
-                <select
-                  value={unduhJenisPenilaian}
-                  onChange={(e) => setUnduhJenisPenilaian(e.target.value)}
-                  disabled={!unduhKelas}
-                  className="select select-bordered w-full text-sm disabled:bg-slate-100"
-                >
-                  <option value="ALL">Semua Penilaian</option>
-                  {listPenilaian.map((j) => (
-                    <option key={j} value={j}>{j}</option>
-                  ))}
-                </select>
-                {unduhKelas && listPenilaian.length === 0 && (
-                  <p className="text-[11px] text-amber-600 font-medium mt-1">Belum ada riwayat penilaian di kelas ini.</p>
-                )}
-              </div>
-            </div>
-
-            <button
-              onClick={handleUnduhLaporan}
-              disabled={!unduhKelas || loadingUnduh || (unduhKelas && listPenilaian.length === 0)}
-              className="btn btn-primary btn-sm gap-1.5 w-full sm:w-auto"
-            >
-              {loadingUnduh ? (
-                <span className="loading loading-spinner loading-xs" />
-              ) : (
-                <Download className="size-4" />
-              )}
-              Unduh Sekarang
-            </button>
           </div>
         </motion.div>
 
@@ -407,21 +244,6 @@ export default function GuruMapelDashboard({
               </div>
             </motion.button>
 
-            <motion.button
-              {...cardHover}
-              onClick={() => handleMasuk('unduh-nilai')}
-              className="card border border-emerald-200/60 bg-white shadow-lg transition-shadow duration-200 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-emerald-500 cursor-pointer"
-            >
-              <div className="card-body gap-3 text-left">
-                <div className="flex size-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-sm ring-1 ring-emerald-500/20">
-                  <FileSpreadsheet className="size-5" />
-                </div>
-                <h3 className="card-title text-sm text-slate-900">Unduh Rekap Nilai</h3>
-                <p className="text-sm leading-relaxed text-slate-500">
-                  Ekspor nilai siswa kelas {selectedKelas} ke Excel dengan filter jenis penilaian.
-                </p>
-              </div>
-            </motion.button>
           </div>
         )}
 
@@ -444,6 +266,13 @@ export default function GuruMapelDashboard({
             </div>
           </motion.div>
         )}
+
+        <ExportScoreModal
+          open={exportModalOpen}
+          onClose={() => setExportModalOpen(false)}
+          daftarKelas={daftarKelas || []}
+          mataPelajaran={selectedMapel}
+        />
 
         <p className="text-center text-[10px] font-medium tracking-wider text-slate-400">
           SIGAP SPENSAWA &bull; Sistem Informasi Guru Aktif &amp; Pengelolaan Akademik

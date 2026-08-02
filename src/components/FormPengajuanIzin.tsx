@@ -120,6 +120,11 @@ export default function FormPengajuanIzin({ open, onClose, userId, namaLengkap }
       toast.error('Alasan detail wajib diisi');
       return;
     }
+    const teacherId = parseInt(userId);
+    if (!userId || Number.isNaN(teacherId) || teacherId <= 0) {
+      toast.error('Data identitas guru tidak valid. Silakan logout dan login kembali.');
+      return;
+    }
     setSubmitting(true);
 
     let suratUrl: string | null = null;
@@ -140,7 +145,7 @@ export default function FormPengajuanIzin({ open, onClose, userId, namaLengkap }
     setUploading(false);
 
     const payload = {
-      user_id: parseInt(userId),
+      user_id: teacherId,
       tanggal_absen: new Date().toISOString().split('T')[0],
       status_izin: statusIzin,
       alasan_detail: alasanDetail.trim(),

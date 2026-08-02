@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, X, FileSpreadsheet } from 'lucide-react';
+import { Download, X, FileSpreadsheet, Printer } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '../supabaseClient';
 import { useAuthStore } from '../store/useAuthStore';
@@ -10,13 +10,16 @@ interface ExportScoreModalProps {
   open: boolean;
   onClose: () => void;
   daftarKelas: string[];
+  mataPelajaran?: string;
 }
 
-export default function ExportScoreModal({ open, onClose, daftarKelas }: ExportScoreModalProps) {
+export default function ExportScoreModal({ open, onClose, daftarKelas, mataPelajaran }: ExportScoreModalProps) {
   const profile = useAuthStore((s) => s.profile);
   const [kelas, setKelas] = useState('');
+  const [jenisPenilaian, setJenisPenilaian] = useState<'semua' | 'spesifik'>('semua');
+  const [spesifikPenilaian, setSpesifikPenilaian] = useState('');
+  const [formatFile, setFormatFile] = useState<'excel' | 'pdf'>('excel');
   const [availablePenilaian, setAvailablePenilaian] = useState<string[]>([]);
-  const [selectedPenilaian, setSelectedPenilaian] = useState('ALL');
   const [loadingJenis, setLoadingJenis] = useState(false);
   const [loadingUnduh, setLoadingUnduh] = useState(false);
   const [teacherClasses, setTeacherClasses] = useState<string[]>([]);
@@ -25,8 +28,9 @@ export default function ExportScoreModal({ open, onClose, daftarKelas }: ExportS
     if (open) {
       setKelas('');
       setAvailablePenilaian([]);
-      setSelectedPenilaian('ALL');
+      setSpesifikPenilaian('');
       setTeacherClasses([]);
+      setJenisPenilaian('semua');
     }
   }, [open]);
 
@@ -50,12 +54,10 @@ export default function ExportScoreModal({ open, onClose, daftarKelas }: ExportS
   useEffect(() => {
     if (!kelas || !profile?.user_id) {
       setAvailablePenilaian([]);
-      setSelectedPenilaian('ALL');
       return;
     }
     const fetchJenis = async () => {
       setLoadingJenis(true);
-      setSelectedPenilaian('ALL');
       try {
         const { data } = await supabase
           .from('student_scores')
@@ -76,95 +78,182 @@ export default function ExportScoreModal({ open, onClose, daftarKelas }: ExportS
     fetchJenis();
   }, [kelas, profile?.user_id]);
 
+  const fetchScores = async () => {
+    if (!kelas || !profile?.user_id) return null;
+    const rawUserId = profile.user_id;
+    const userIdNum = typeof rawUserId === 'string' ? parseInt(rawUserId) : rawUserId;
+
+    let query = supabase
+      .from('student_scores')
+      .select('student_id, jenis_penilaian, nilai')
+      .eq('user_id', userIdNum)
+      .eq('kelas', kelas);
+
+    if (jenisPenilaian === 'spesifik' && spesifikPenilaian.trim()) {
+      query = query.eq('jenis_penilaian', spesifikPenilaian.trim());
+    }
+
+    const { data: scores, error } = await query;
+    if (error) throw error;
+    return scores || [];
+  };
+
+  const fetchStudents = async (scores: any[]) => {
+    const studentIds = [...new Set(scores.map((s: any) => s.student_id))];
+    const { data: students } = await supabase
+      .from('students')
+      .select('id, nama_siswa, nisn')
+      .in('id', studentIds);
+    return students || [];
+  };
+
+  const buildPivotData = (scores: any[], students: any[]) => {
+    const studentMap = new Map<number, { nama_siswa: string; nisn: string }>();
+    students.forEach((s: any) => {
+      studentMap.set(s.id, { nama_siswa: s.nama_siswa, nisn: s.nisn });
+    });
+
+    const pivotedMap = new Map<number, Record<string, number>>();
+    const studentInfoMap = new Map<number, { nama_siswa: string; nisn: string }>();
+
+    scores.forEach((s: any) => {
+      if (!pivotedMap.has(s.student_id)) {
+        pivotedMap.set(s.student_id, {});
+      }
+      pivotedMap.get(s.student_id)![s.jenis_penilaian] = s.nilai;
+      if (!studentInfoMap.has(s.student_id)) {
+        const info = studentMap.get(s.student_id);
+        studentInfoMap.set(s.student_id, {
+          nama_siswa: info?.nama_siswa || `(id: ${s.student_id})`,
+          nisn: info?.nisn || '',
+        });
+      }
+    });
+
+    return { pivotedMap, studentInfoMap };
+  };
+
+  const handleUnduhExcel = async (scores: any[]) => {
+    const students = await fetchStudents(scores);
+    const { pivotedMap, studentInfoMap } = buildPivotData(scores, students);
+
+    const sortedStudentIds = Array.from(pivotedMap.keys()).sort((a, b) => {
+      const na = studentInfoMap.get(a)?.nama_siswa || '';
+      const nb = studentInfoMap.get(b)?.nama_siswa || '';
+      return na.localeCompare(nb);
+    });
+
+    const allJenis = [...new Set(scores.map((s: any) => s.jenis_penilaian))].sort();
+    const header = ['Nama Siswa', 'NISN', ...allJenis];
+    const rows = sortedStudentIds.map(id => {
+      const info = studentInfoMap.get(id)!;
+      const vals = pivotedMap.get(id)!;
+      return [info.nama_siswa, info.nisn, ...allJenis.map(j => vals[j] ?? '')];
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Rekap Nilai');
+    ws['!cols'] = [
+      { wch: 30 },
+      { wch: 15 },
+      ...allJenis.map(() => ({ wch: 12 })),
+    ];
+
+    const label =
+      jenisPenilaian === 'spesifik' && spesifikPenilaian.trim()
+        ? spesifikPenilaian.replace(/\s+/g, '_')
+        : 'Semua_Penilaian';
+    XLSX.writeFile(wb, `Rekap_Nilai_${kelas}_${label}.xlsx`);
+  };
+
+  const handleUnduhPdf = async (scores: any[]) => {
+    const students = await fetchStudents(scores);
+    const { pivotedMap, studentInfoMap } = buildPivotData(scores, students);
+
+    const sortedStudentIds = Array.from(pivotedMap.keys()).sort((a, b) => {
+      const na = studentInfoMap.get(a)?.nama_siswa || '';
+      const nb = studentInfoMap.get(b)?.nama_siswa || '';
+      return na.localeCompare(nb);
+    });
+
+    const allJenis = [...new Set(scores.map((s: any) => s.jenis_penilaian))].sort();
+
+    let printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error('Izinkan pop-up untuk mencetak PDF.');
+      return;
+    }
+
+    const title =
+      jenisPenilaian === 'spesifik' && spesifikPenilaian.trim()
+        ? `Rekap Nilai — ${kelas} — ${spesifikPenilaian.trim()}`
+        : `Rekap Nilai — ${kelas} — Semua Penilaian`;
+
+    const tableRows = sortedStudentIds
+      .map((id) => {
+        const info = studentInfoMap.get(id)!;
+        const vals = pivotedMap.get(id)!;
+        const cells = allJenis.map((j) => `<td>${vals[j] ?? ''}</td>`).join('');
+        return `<tr><td>${info.nama_siswa}</td><td>${info.nisn}</td>${cells}</tr>`;
+      })
+      .join('');
+
+    const jenisHeaders = allJenis.map((j) => `<th>${j}</th>`).join('');
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>${title}</title>
+        <style>
+          body { font-family: 'Segoe UI', Arial, sans-serif; padding: 24px; color: #1e293b; }
+          h1 { font-size: 18px; margin-bottom: 4px; }
+          .sub { font-size: 13px; color: #64748b; margin-bottom: 20px; }
+          table { width: 100%; border-collapse: collapse; font-size: 12px; }
+          th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; }
+          th { background: #f1f5f9; font-weight: 600; }
+          tr:nth-child(even) { background: #f8fafc; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <h1>${title}</h1>
+        <p class="sub">Dicetak dari SIGAP SPENSAWA</p>
+        <table>
+          <thead><tr><th>Nama Siswa</th><th>NISN</th>${jenisHeaders}</tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => printWindow.print(), 500);
+  };
+
   const handleUnduh = async () => {
     if (!kelas || !profile?.user_id) return;
+    if (jenisPenilaian === 'spesifik' && !spesifikPenilaian.trim()) {
+      toast.error('Pilih jenis penilaian yang ingin diunduh.');
+      return;
+    }
     setLoadingUnduh(true);
     try {
-      const rawUserId = profile.user_id;
-      const userIdNum = typeof rawUserId === 'string' ? parseInt(rawUserId) : rawUserId;
-
-      let query = supabase
-        .from('student_scores')
-        .select('student_id, jenis_penilaian, nilai')
-        .eq('user_id', userIdNum)
-        .eq('kelas', kelas);
-
-      if (selectedPenilaian !== 'ALL') {
-        query = query.eq('jenis_penilaian', selectedPenilaian);
-      }
-
-      const { data: scores, error } = await query;
-
-      if (error) throw error;
+      const scores = await fetchScores();
       if (!scores || scores.length === 0) {
         toast.error('Tidak ada data nilai untuk kriteria yang dipilih.');
         return;
       }
 
-      const studentIds = [...new Set(scores.map((s: any) => s.student_id))];
-      const { data: students } = await supabase
-        .from('students')
-        .select('id, nama_siswa, nisn')
-        .in('id', studentIds);
-
-      const studentMap = new Map<number, { nama_siswa: string; nisn: string }>();
-      if (students) {
-        students.forEach((s: any) => {
-          studentMap.set(s.id, { nama_siswa: s.nama_siswa, nisn: s.nisn });
-        });
+      if (formatFile === 'excel') {
+        await handleUnduhExcel(scores);
+      } else {
+        await handleUnduhPdf(scores);
       }
 
-      const pivotedMap = new Map<number, Record<string, number>>();
-      const studentInfoMap = new Map<number, { nama_siswa: string; nisn: string }>();
-
-      scores.forEach((s: any) => {
-        if (!pivotedMap.has(s.student_id)) {
-          pivotedMap.set(s.student_id, {});
-        }
-        pivotedMap.get(s.student_id)![s.jenis_penilaian] = s.nilai;
-
-        if (!studentInfoMap.has(s.student_id)) {
-          const info = studentMap.get(s.student_id);
-          studentInfoMap.set(s.student_id, {
-            nama_siswa: info?.nama_siswa || `(id: ${s.student_id})`,
-            nisn: info?.nisn || '',
-          });
-        }
-      });
-
-      const sortedStudentIds = Array.from(pivotedMap.keys()).sort((a, b) => {
-        const na = studentInfoMap.get(a)?.nama_siswa || '';
-        const nb = studentInfoMap.get(b)?.nama_siswa || '';
-        return na.localeCompare(nb);
-      });
-
-      const allJenis = [...new Set(scores.map((s: any) => s.jenis_penilaian))].sort();
-
-      const header = ['Nama Siswa', 'NISN', ...allJenis];
-      const rows = sortedStudentIds.map(id => {
-        const info = studentInfoMap.get(id)!;
-        const scores = pivotedMap.get(id)!;
-        return [
-          info.nama_siswa,
-          info.nisn,
-          ...allJenis.map(jenis => scores[jenis] ?? ''),
-        ];
-      });
-
-      const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Rekap Nilai');
-
-      const colWidths = [
-        { wch: 30 },
-        { wch: 15 },
-        ...allJenis.map(() => ({ wch: 12 })),
-      ];
-      ws['!cols'] = colWidths;
-
-      const label = selectedPenilaian === 'ALL' ? 'Semua_Penilaian' : selectedPenilaian.replace(/\s+/g, '_');
-      XLSX.writeFile(wb, `Rekap_Nilai_${kelas}_${label}.xlsx`);
-      toast.success('File Excel berhasil diunduh!');
+      toast.success('Laporan berhasil diunduh!');
       onClose();
     } catch (err: any) {
       toast.error('Gagal mengunduh: ' + err.message);
@@ -174,6 +263,12 @@ export default function ExportScoreModal({ open, onClose, daftarKelas }: ExportS
   };
 
   const siap = kelas && !loadingJenis;
+
+  const canUnduh =
+    siap &&
+    !loadingUnduh &&
+    (!loadingJenis && kelas && availablePenilaian.length > 0) &&
+    (jenisPenilaian === 'semua' || (jenisPenilaian === 'spesifik' && spesifikPenilaian.trim()));
 
   return (
     <AnimatePresence>
@@ -200,7 +295,7 @@ export default function ExportScoreModal({ open, onClose, daftarKelas }: ExportS
                 <div className="flex size-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-xs">
                   <FileSpreadsheet className="size-4" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-900">Unduh Rekap Nilai</h3>
+                <h3 className="text-sm font-bold text-slate-900">Pusat Unduh Laporan Mandiri</h3>
               </div>
               <button onClick={onClose} className="btn btn-ghost btn-sm btn-square">
                 <X className="size-4" />
@@ -209,7 +304,20 @@ export default function ExportScoreModal({ open, onClose, daftarKelas }: ExportS
 
             {/* ── Body ── */}
             <div className="space-y-5 px-6 py-5">
-              {/* Dropdown Kelas */}
+              {/* Field 1: Mata Pelajaran */}
+              <div className="form-control w-full">
+                <label className="label py-1">
+                  <span className="label-text text-sm font-semibold">Mata Pelajaran</span>
+                </label>
+                <input
+                  type="text"
+                  value={mataPelajaran || '—'}
+                  readOnly
+                  className="input input-bordered w-full bg-slate-50 text-sm font-semibold text-slate-700"
+                />
+              </div>
+
+              {/* Field 2: Dropdown Kelas */}
               <div className="form-control w-full">
                 <label className="label py-1">
                   <span className="label-text text-sm font-semibold">Pilih Kelas</span>
@@ -226,30 +334,76 @@ export default function ExportScoreModal({ open, onClose, daftarKelas }: ExportS
                 </select>
               </div>
 
-              {/* Dropdown Jenis Penilaian */}
+              {/* Field 3: Jenis Penilaian */}
               <div className="form-control w-full">
                 <label className="label py-1">
-                  <span className="label-text text-sm font-semibold">Jenis Penilaian</span>
+                  <span className="label-text text-sm font-semibold">Pilih Jenis Penilaian</span>
+                </label>
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="jenisPenilaian"
+                      className="radio radio-primary radio-sm"
+                      checked={jenisPenilaian === 'semua'}
+                      onChange={() => setJenisPenilaian('semua')}
+                    />
+                    <span className="text-sm">Semua Penilaian (Rekap Kumulatif / Nilai Akhir)</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="jenisPenilaian"
+                      className="radio radio-primary radio-sm"
+                      checked={jenisPenilaian === 'spesifik'}
+                      onChange={() => setJenisPenilaian('spesifik')}
+                    />
+                    <span className="text-sm">Penilaian Spesifik</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Sub-dropdown Jenis Penilaian (only in spesifik mode) */}
+              {jenisPenilaian === 'spesifik' && (
+                <div className="form-control w-full">
+                  <label className="label py-1">
+                    <span className="label-text text-sm font-semibold">Nama Penilaian</span>
+                  </label>
+                  <select
+                    value={spesifikPenilaian}
+                    onChange={(e) => setSpesifikPenilaian(e.target.value)}
+                    disabled={!kelas || loadingJenis}
+                    className="select select-bordered w-full text-sm disabled:bg-slate-100"
+                  >
+                    <option value="">— Pilih Penilaian —</option>
+                    {availablePenilaian.map((j) => (
+                      <option key={j} value={j}>{j}</option>
+                    ))}
+                  </select>
+                  {loadingJenis && (
+                    <p className="text-[11px] text-slate-500 mt-1 animate-pulse">Memuat daftar penilaian...</p>
+                  )}
+                  {!loadingJenis && kelas && availablePenilaian.length === 0 && (
+                    <p className="text-[11px] text-amber-600 font-medium mt-1">
+                      Belum ada riwayat penilaian di kelas ini.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Format File */}
+              <div className="form-control w-full">
+                <label className="label py-1">
+                  <span className="label-text text-sm font-semibold">Format File</span>
                 </label>
                 <select
-                  value={selectedPenilaian}
-                  onChange={(e) => setSelectedPenilaian(e.target.value)}
-                  disabled={!kelas || loadingJenis}
-                  className="select select-bordered w-full text-sm disabled:bg-slate-100"
+                  value={formatFile}
+                  onChange={(e) => setFormatFile(e.target.value as 'excel' | 'pdf')}
+                  className="select select-bordered w-full text-sm"
                 >
-                  <option value="ALL">Semua Penilaian</option>
-                  {availablePenilaian.map((jenis) => (
-                    <option key={jenis} value={jenis}>{jenis}</option>
-                  ))}
+                  <option value="excel">Microsoft Excel (.xlsx)</option>
+                  <option value="pdf">PDF / Cetak</option>
                 </select>
-                {loadingJenis && (
-                  <p className="text-[11px] text-slate-500 mt-1 animate-pulse">Memuat daftar penilaian...</p>
-                )}
-                {!loadingJenis && kelas && availablePenilaian.length === 0 && (
-                  <p className="text-[11px] text-amber-600 font-medium mt-1">
-                    Belum ada riwayat penilaian di kelas ini.
-                  </p>
-                )}
               </div>
             </div>
 
@@ -260,13 +414,15 @@ export default function ExportScoreModal({ open, onClose, daftarKelas }: ExportS
               </button>
               <button
                 onClick={handleUnduh}
-                disabled={!siap || loadingUnduh || (!loadingJenis && kelas && availablePenilaian.length === 0)}
+                disabled={!canUnduh}
                 className="btn btn-primary btn-sm gap-1.5"
               >
                 {loadingUnduh ? (
                   <span className="loading loading-spinner loading-xs" />
-                ) : (
+                ) : formatFile === 'excel' ? (
                   <Download className="size-4" />
+                ) : (
+                  <Printer className="size-4" />
                 )}
                 Unduh Sekarang
               </button>
