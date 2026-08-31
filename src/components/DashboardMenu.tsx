@@ -298,7 +298,13 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
         fileName = `Akumulasi_BK${labelKelas}`;
 
       } else if (jenis === 'ekskul_jurnal') {
-        let queryEkskul = supabase.from('teaching_journals').select('*').eq('user_id', profile.user_id).ilike('mata_pelajaran', '%Ekskul%');
+        const ekskulIds = profile.ekskul_assignments?.map(e => e.ekskul_id) || [];
+        let queryEkskul = supabase.from('teaching_journals').select('*');
+        if (ekskulIds.length > 0) {
+          queryEkskul = queryEkskul.in('ekskul_id', ekskulIds);
+        } else {
+          queryEkskul = queryEkskul.ilike('mata_pelajaran', '%Ekskul%');
+        }
         if (range.gte) queryEkskul = queryEkskul.gte('created_at', range.gte).lte('created_at', range.lte);
         const { data, error } = await queryEkskul.order('created_at', { ascending: false });
         if (error) throw error;
@@ -308,10 +314,19 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
           'Topik / Kegiatan': d.materi_pembelajaran,
           'Catatan Evaluasi': d.catatan_kelas || '-',
         }));
-        fileName = `Rekap_Jurnal_Ekskul_${profile.nama_ekstrakurikuler}`;
+        const ekskulNames = profile.ekskul_assignments?.map(e => e.nama_ekskul).join('_') || 'Ekskul';
+        fileName = `Rekap_Jurnal_Ekskul_${ekskulNames}`;
 
       } else if (jenis === 'ekskul_anggota') {
-        const { data, error } = await supabase.from('student_ekskul').select('*').eq('nama_ekskul', profile.nama_ekstrakurikuler);
+        const ekskulIds = profile.ekskul_assignments?.map(e => e.ekskul_id) || [];
+        let queryAnggota = supabase.from('student_ekskul').select('*');
+        if (ekskulIds.length > 0) {
+          queryAnggota = queryAnggota.in('ekskul_id', ekskulIds);
+        } else {
+          const ekskulNames = profile.ekskul_assignments?.map(e => e.nama_ekskul) || (profile?.nama_ekstrakurikuler ? [profile.nama_ekstrakurikuler] : []);
+          queryAnggota = queryAnggota.in('nama_ekskul', ekskulNames);
+        }
+        const { data, error } = await queryAnggota;
         if (error) throw error;
         const { data: studentsData } = await supabase.from('students').select('id, nama_siswa, kelas, nisn');
         const studentMap = new Map((studentsData || []).map(s => [s.id, s]));
@@ -325,10 +340,19 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
             'Tanggal Bergabung': d.created_at ? new Date(d.created_at).toLocaleDateString('id-ID') : '-',
           };
         });
-        fileName = `Daftar_Anggota_Ekskul_${profile.nama_ekstrakurikuler}`;
+        const ekskulNames = profile.ekskul_assignments?.map(e => e.nama_ekskul).join('_') || 'Ekskul';
+        fileName = `Daftar_Anggota_Ekskul_${ekskulNames}`;
 
       } else if (jenis === 'ekskul_nilai') {
-        const { data, error } = await supabase.from('student_ekskul').select('*').eq('nama_ekskul', profile.nama_ekstrakurikuler);
+        const ekskulIds = profile.ekskul_assignments?.map(e => e.ekskul_id) || [];
+        let queryNilai = supabase.from('student_ekskul').select('*');
+        if (ekskulIds.length > 0) {
+          queryNilai = queryNilai.in('ekskul_id', ekskulIds);
+        } else {
+          const ekskulNames = profile.ekskul_assignments?.map(e => e.nama_ekskul) || (profile?.nama_ekstrakurikuler ? [profile.nama_ekstrakurikuler] : []);
+          queryNilai = queryNilai.in('nama_ekskul', ekskulNames);
+        }
+        const { data, error } = await queryNilai;
         if (error) throw error;
         const { data: studentsData } = await supabase.from('students').select('id, nama_siswa, kelas, nisn');
         const studentMap = new Map((studentsData || []).map(s => [s.id, s]));
@@ -342,7 +366,8 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
             'Deskripsi Catatan Kemajuan': d.deskripsi_kemajuan || '-',
           };
         });
-        fileName = `Rekap_Nilai_Ekskul_${profile.nama_ekstrakurikuler}`;
+        const ekskulNames = profile.ekskul_assignments?.map(e => e.nama_ekskul).join('_') || 'Ekskul';
+        fileName = `Rekap_Nilai_Ekskul_${ekskulNames}`;
       } else if (jenis === 'rekap_jurnal_all') {
         let q = supabase.from('teaching_journals').select('*');
         if (range.gte) q = q.gte('created_at', range.gte).lte('created_at', range.lte);
@@ -637,7 +662,7 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
             </motion.button>
           )}
 
-          {profile?.nama_ekstrakurikuler && (
+          {((profile?.ekskul_assignments && profile.ekskul_assignments.length > 0) || profile?.nama_ekstrakurikuler) && (
             <motion.button
               {...cardHover}
               onClick={() => setCurrentRole('pembina_ekskul')}
@@ -649,7 +674,7 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
                 </div>
                 <h3 className="card-title text-sm text-slate-900">
                   Kegiatan Ekstrakurikuler
-                  <span className="badge badge-soft badge-violet badge-sm ml-1">{profile.nama_ekstrakurikuler}</span>
+                  <span className="badge badge-soft badge-violet badge-sm ml-1">{profile?.ekskul_assignments && profile.ekskul_assignments.length > 0 ? profile.ekskul_assignments.map(e => e.nama_ekskul).join(', ') : profile?.nama_ekstrakurikuler || 'Ekskul'}</span>
                 </h3>
                 <p className="text-sm leading-relaxed text-slate-500">
                   Input log pelaksanaan latihan, manajemen rombel &amp; nilai kualitatif.
@@ -731,7 +756,7 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
             )}
 
             {/* ── Kelompok Ekstrakurikuler ── */}
-            {profile?.nama_ekstrakurikuler && (
+            {((profile?.ekskul_assignments && profile.ekskul_assignments.length > 0) || profile?.nama_ekstrakurikuler) && (
               <div className="space-y-2">
                 <h4 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   <Trophy className="size-3.5" />

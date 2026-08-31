@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AreaChart,
@@ -15,10 +15,13 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
+import { supabase } from '../supabaseClient';
+import { BarChart3 } from 'lucide-react';
 
-/* ═══════════════════════════════════════════════
-   DUMMY DATA — Statis untuk development
-   ═══════════════════════════════════════════════ */
+interface EkskulAnalyticsProps {
+  ekskulId: string | null;
+  ekskulName: string;
+}
 
 interface TrenItem {
   tgl: string;
@@ -38,36 +41,6 @@ interface NilaiItem {
   value: number;
 }
 
-const DUMMY_TREN: TrenItem[] = [
-  { tgl: '10 Mar', hadir: 22, sakit: 2, izin: 1, alfa: 0 },
-  { tgl: '12 Mar', hadir: 20, sakit: 1, izin: 3, alfa: 1 },
-  { tgl: '14 Mar', hadir: 23, sakit: 0, izin: 1, alfa: 1 },
-  { tgl: '17 Mar', hadir: 19, sakit: 3, izin: 2, alfa: 1 },
-  { tgl: '19 Mar', hadir: 21, sakit: 1, izin: 0, alfa: 3 },
-  { tgl: '21 Mar', hadir: 24, sakit: 0, izin: 0, alfa: 1 },
-  { tgl: '24 Mar', hadir: 22, sakit: 2, izin: 1, alfa: 0 },
-];
-
-const DUMMY_SEBARAN_KELAS: KelasItem[] = [
-  { kelas: 'VII A', jumlah: 4 },
-  { kelas: 'VII B', jumlah: 3 },
-  { kelas: 'VIII A', jumlah: 5 },
-  { kelas: 'VIII B', jumlah: 2 },
-  { kelas: 'IX A', jumlah: 6 },
-  { kelas: 'IX B', jumlah: 3 },
-];
-
-const DUMMY_NILAI: NilaiItem[] = [
-  { nama: 'Sangat Baik', value: 8 },
-  { nama: 'Baik', value: 14 },
-  { nama: 'Cukup', value: 5 },
-  { nama: 'Kurang', value: 2 },
-];
-
-/* ═══════════════════════════════════════════════
-   WARNA
-   ═══════════════════════════════════════════════ */
-
 const WARNA_TREN: Record<string, string> = {
   hadir: '#10B981',
   sakit: '#F59E0B',
@@ -76,10 +49,6 @@ const WARNA_TREN: Record<string, string> = {
 };
 
 const WARNA_PIE = ['#367cce', '#bdd962', '#e3a98b', '#f97316'];
-
-/* ═══════════════════════════════════════════════
-   CUSTOM TOOLTIP
-   ═══════════════════════════════════════════════ */
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
@@ -100,10 +69,6 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
-/* ═══════════════════════════════════════════════
-   TIPE TAB
-   ═══════════════════════════════════════════════ */
-
 type Tab = 'tren' | 'sebaran_kelas' | 'sebaran_nilai';
 
 const TAB_LABEL: Record<Tab, string> = {
@@ -112,29 +77,147 @@ const TAB_LABEL: Record<Tab, string> = {
   sebaran_nilai: 'Sebaran Nilai Siswa',
 };
 
-/* ═══════════════════════════════════════════════
-   KOMPONEN UTAMA
-   ═══════════════════════════════════════════════ */
-
-export default function EkskulAnalytics() {
+export default function EkskulAnalytics({ ekskulId, ekskulName }: EkskulAnalyticsProps) {
   const [activeTab, setActiveTab] = useState<Tab>('tren');
+  const [trenData, setTrenData] = useState<TrenItem[]>([]);
+  const [kelasData, setKelasData] = useState<KelasItem[]>([]);
+  const [nilaiData, setNilaiData] = useState<NilaiItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalAnggota, setTotalAnggota] = useState(0);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [ekskulId]);
+
+  const fetchAnalytics = async () => {
+    setLoading(true);
+    try {
+      let memberQuery = supabase.from('student_ekskul').select('*');
+      if (ekskulId) {
+        memberQuery = memberQuery.eq('ekskul_id', ekskulId);
+      } else {
+        memberQuery = memberQuery.eq('nama_ekskul', ekskulName);
+      }
+      const { data: members } = await memberQuery;
+      if (!members || members.length === 0) {
+        setTrenData([]);
+        setKelasData([]);
+        setNilaiData([]);
+        setTotalAnggota(0);
+        setLoading(false);
+        return;
+      }
+
+      setTotalAnggota(members.length);
+
+      const studentIds = [...new Set(members.map(m => m.student_id))];
+      const { data: students } = await supabase.from('students').select('id, kelas').in('id', studentIds);
+      const studentMap = new Map((students || []).map(s => [s.id, s]));
+
+      const kelasCount: Record<string, number> = {};
+      members.forEach(m => {
+        const siswa = studentMap.get(m.student_id);
+        if (siswa?.kelas) {
+          kelasCount[siswa.kelas] = (kelasCount[siswa.kelas] || 0) + 1;
+        }
+      });
+      const kelasItems = Object.entries(kelasCount)
+        .map(([kelas, jumlah]) => ({ kelas, jumlah }))
+        .sort((a, b) => b.jumlah - a.jumlah);
+      setKelasData(kelasItems);
+
+      const nilaiCount: Record<string, number> = { 'Sangat Baik': 0, 'Baik': 0, 'Cukup': 0, 'Kurang': 0 };
+      members.forEach(m => {
+        const nk = m.nilai_kualitatif || 'B';
+        if (nk === 'A') nilaiCount['Sangat Baik']++;
+        else if (nk === 'B') nilaiCount['Baik']++;
+        else if (nk === 'C') nilaiCount['Cukup']++;
+        else nilaiCount['Kurang']++;
+      });
+      setNilaiData(Object.entries(nilaiCount).map(([nama, value]) => ({ nama, value })));
+
+      const journalQuery = supabase.from('teaching_journals').select('id, created_at').eq('kelas', 'Ekskul');
+      const filteredJournalQuery = ekskulId
+        ? journalQuery.eq('ekskul_id', ekskulId)
+        : journalQuery.ilike('mata_pelajaran', `%${ekskulName}%`);
+      const { data: journals } = await filteredJournalQuery.order('created_at', { ascending: true });
+
+      if (!journals || journals.length === 0) {
+        setTrenData([]);
+        setLoading(false);
+        return;
+      }
+
+      const journalIds = journals.map(j => j.id);
+      const { data: attendances } = await supabase
+        .from('student_attendances')
+        .select('teaching_journal_id, status')
+        .in('teaching_journal_id', journalIds);
+
+      const attByJournal: Record<number, { hadir: number; sakit: number; izin: number; alfa: number }> = {};
+      (attendances || []).forEach(a => {
+        if (!attByJournal[a.teaching_journal_id]) {
+          attByJournal[a.teaching_journal_id] = { hadir: 0, sakit: 0, izin: 0, alfa: 0 };
+        }
+        const bucket = attByJournal[a.teaching_journal_id];
+        if (a.status === 'Hadir') bucket.hadir++;
+        else if (a.status === 'Sakit') bucket.sakit++;
+        else if (a.status === 'Izin') bucket.izin++;
+        else bucket.alfa++;
+      });
+
+      const tren: TrenItem[] = journals.map(j => {
+        const tgl = new Date(j.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+        const att = attByJournal[j.id] || { hadir: 0, sakit: 0, izin: 0, alfa: 0 };
+        return { tgl, ...att };
+      });
+      setTrenData(tren);
+    } catch {
+      setTrenData([]);
+      setKelasData([]);
+      setNilaiData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="card rounded-2xl border border-slate-200/60 bg-white shadow-md">
+        <div className="card-body items-center justify-center py-16">
+          <span className="loading loading-spinner loading-md text-violet-500" />
+          <p className="mt-2 text-sm text-slate-400">Memuat analitik...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (totalAnggota === 0) {
+    return (
+      <div className="card rounded-2xl border border-slate-200/60 bg-white shadow-md">
+        <div className="card-body items-center gap-3 py-16 text-center">
+          <BarChart3 className="size-10 text-slate-300" />
+          <p className="text-sm font-medium text-slate-400">Belum ada data untuk analitik.</p>
+          <p className="text-sm text-slate-400">Tambahkan anggota dan mulai catat jurnal untuk melihat analitik.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="card rounded-2xl border border-slate-200/60 bg-white shadow-md">
       <div className="card-body gap-5 p-5 sm:p-6">
-        {/* ── Header ── */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="card-title text-sm text-slate-900">
-              Analitik Ekstrakurikuler
+              Analitik {ekskulName}
             </h3>
             <p className="text-sm text-slate-500">
-              Visualisasi data kehadiran, sebaran anggota, dan capaian nilai
+              {totalAnggota} anggota terdaftar &bull; {trenData.length} jurnal tercatat
             </p>
           </div>
         </div>
 
-        {/* ── Tab Group ── */}
         <div className="tabs tabs-box border border-slate-200 bg-slate-50/50 p-1">
           {(Object.keys(TAB_LABEL) as Tab[]).map((tab) => (
             <button
@@ -151,7 +234,6 @@ export default function EkskulAnalytics() {
           ))}
         </div>
 
-        {/* ── Area Chart ── */}
         <AnimatePresence mode="wait">
           {activeTab === 'tren' && (
             <motion.div
@@ -161,57 +243,36 @@ export default function EkskulAnalytics() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.3, ease: 'easeOut' }}
             >
-              <div className="h-72 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={DUMMY_TREN} margin={{ top: 8, right: 4, left: -8, bottom: 0 }}>
-                    <defs>
-                      {Object.entries(WARNA_TREN).map(([key, color]) => (
-                        <linearGradient key={key} id={`grad_${key}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={color} stopOpacity={0.3} />
-                          <stop offset="95%" stopColor={color} stopOpacity={0.03} />
-                        </linearGradient>
+              {trenData.length === 0 ? (
+                <p className="py-8 text-center text-sm text-slate-400">Belum ada data jurnal.</p>
+              ) : (
+                <div className="h-72 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={trenData} margin={{ top: 8, right: 4, left: -8, bottom: 0 }}>
+                      <defs>
+                        {Object.entries(WARNA_TREN).map(([key, color]) => (
+                          <linearGradient key={key} id={`grad_${key}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+                            <stop offset="95%" stopColor={color} stopOpacity={0.03} />
+                          </linearGradient>
+                        ))}
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
+                      <XAxis dataKey="tgl" tick={{ fontSize: 11, fill: '#64748B' }} axisLine={{ stroke: '#E2E8F0' }} tickLine={false} />
+                      <YAxis tick={{ fontSize: 11, fill: '#64748B' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                      <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#94A3B8', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                      <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} iconType="circle" iconSize={8} />
+                      {Object.entries(WARNA_TREN).map(([key, color], idx) => (
+                        <Area key={key} dataKey={key} stackId="1" stroke={color} strokeWidth={2} fill={`url(#grad_${key})`} animationBegin={idx * 100} animationDuration={800} animationEasing="ease-out" />
                       ))}
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-                    <XAxis
-                      dataKey="tgl"
-                      tick={{ fontSize: 11, fill: '#64748B' }}
-                      axisLine={{ stroke: '#E2E8F0' }}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 11, fill: '#64748B' }}
-                      axisLine={false}
-                      tickLine={false}
-                      allowDecimals={false}
-                    />
-                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#94A3B8', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                    <Legend
-                      wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-                      iconType="circle"
-                      iconSize={8}
-                    />
-                    {Object.entries(WARNA_TREN).map(([key, color], idx) => (
-                      <Area
-                        key={key}
-                        dataKey={key}
-                        stackId="1"
-                        stroke={color}
-                        strokeWidth={2}
-                        fill={`url(#grad_${key})`}
-                        animationBegin={idx * 100}
-                        animationDuration={800}
-                        animationEasing="ease-out"
-                      />
-                    ))}
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ── Bar Chart ── */}
         <AnimatePresence mode="wait">
           {activeTab === 'sebaran_kelas' && (
             <motion.div
@@ -221,45 +282,25 @@ export default function EkskulAnalytics() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.3, ease: 'easeOut' }}
             >
-              <div className="h-80 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={DUMMY_SEBARAN_KELAS} margin={{ top: 8, right: 8, left: -8, bottom: 0 }} barCategoryGap="24%">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-                    <XAxis
-                      dataKey="kelas"
-                      tick={{ fontSize: 11, fill: '#64748B' }}
-                      axisLine={{ stroke: '#E2E8F0' }}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 11, fill: '#64748B' }}
-                      axisLine={false}
-                      tickLine={false}
-                      allowDecimals={false}
-                    />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: '#F1F5F9' }} />
-                    <Bar
-                      dataKey="jumlah"
-                      fill="#367cce"
-                      radius={[6, 6, 0, 0]}
-                      animationBegin={100}
-                      animationDuration={700}
-                      animationEasing="ease-out"
-                      label={{
-                        position: 'top',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        fill: '#367cce',
-                      }}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {kelasData.length === 0 ? (
+                <p className="py-8 text-center text-sm text-slate-400">Belum ada data anggota.</p>
+              ) : (
+                <div className="h-80 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={kelasData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }} barCategoryGap="24%">
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
+                      <XAxis dataKey="kelas" tick={{ fontSize: 11, fill: '#64748B' }} axisLine={{ stroke: '#E2E8F0' }} tickLine={false} />
+                      <YAxis tick={{ fontSize: 11, fill: '#64748B' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                      <Tooltip content={<CustomTooltip />} cursor={{ fill: '#F1F5F9' }} />
+                      <Bar dataKey="jumlah" fill="#367cce" radius={[6, 6, 0, 0]} animationBegin={100} animationDuration={700} animationEasing="ease-out" label={{ position: 'top', fontSize: 11, fontWeight: 700, fill: '#367cce' }} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ── Pie Chart ── */}
         <AnimatePresence mode="wait">
           {activeTab === 'sebaran_nilai' && (
             <motion.div
@@ -273,40 +314,19 @@ export default function EkskulAnalytics() {
                 <div className="h-72 w-full max-w-sm">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie
-                        data={DUMMY_NILAI}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={3}
-                        dataKey="value"
-                        nameKey="nama"
-                        animationBegin={100}
-                        animationDuration={700}
-                        animationEasing="ease-out"
-                      >
-                        {DUMMY_NILAI.map((_, idx) => (
-                          <Cell
-                            key={idx}
-                            fill={WARNA_PIE[idx % WARNA_PIE.length]}
-                            stroke="#fff"
-                            strokeWidth={2}
-                          />
+                      <Pie data={nilaiData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={3} dataKey="value" nameKey="nama" animationBegin={100} animationDuration={700} animationEasing="ease-out">
+                        {nilaiData.map((_, idx) => (
+                          <Cell key={idx} fill={WARNA_PIE[idx % WARNA_PIE.length]} stroke="#fff" strokeWidth={2} />
                         ))}
                       </Pie>
                       <Tooltip content={<CustomTooltip />} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                {/* ── Legend Manual ── */}
                 <div className="mt-4 flex flex-wrap justify-center gap-3 sm:mt-0 sm:flex-col sm:justify-center sm:pl-6">
-                  {DUMMY_NILAI.map((item, idx) => (
+                  {nilaiData.map((item, idx) => (
                     <div key={item.nama} className="flex items-center gap-2 text-sm">
-                      <span
-                        className="inline-block size-3 rounded-full"
-                        style={{ backgroundColor: WARNA_PIE[idx % WARNA_PIE.length] }}
-                      />
+                      <span className="inline-block size-3 rounded-full" style={{ backgroundColor: WARNA_PIE[idx % WARNA_PIE.length] }} />
                       <span className="text-slate-600">{item.nama}</span>
                       <span className="font-bold text-slate-800">{item.value}</span>
                     </div>

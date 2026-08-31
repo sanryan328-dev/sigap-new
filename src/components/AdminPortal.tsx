@@ -512,6 +512,39 @@ export default function AdminPortal({ handleLogout, daftarKelas }: AdminPortalPr
         await supabase.from('users').update({ role: formGuru.role }).eq('id', formGuru.id_pengguna);
       }
 
+      if (formGuru.id_pengguna) {
+        const ekskulName = formGuru.nama_ekstrakurikuler?.trim();
+        if (ekskulName) {
+          const { data: existingEkskul } = await supabase
+            .from('extracurriculars')
+            .select('id')
+            .ilike('nama_ekskul', ekskulName)
+            .maybeSingle();
+          let ekskulId = existingEkskul?.id;
+          if (!ekskulId) {
+            const kode = ekskulName.toUpperCase().replace(/[^A-Z0-9]+/g, '_');
+            const { data: newEkskul } = await supabase
+              .from('extracurriculars')
+              .insert({ kode_ekskul: kode, nama_ekskul: ekskulName })
+              .select('id')
+              .single();
+            ekskulId = newEkskul?.id;
+          }
+          if (ekskulId) {
+            await supabase.from('extracurricular_coaches').upsert({
+              ekskul_id: ekskulId,
+              user_id: formGuru.id_pengguna,
+              is_primary: true,
+              active: true,
+            }, { onConflict: 'ekskul_id,user_id' });
+          }
+        } else {
+          await supabase.from('extracurricular_coaches')
+            .update({ active: false })
+            .eq('user_id', formGuru.id_pengguna);
+        }
+      }
+
       toast.success('Struktur tugas mengajar dan jadwal hari piket guru berhasil diperbarui!');
       setIsEditGuru(false);
       fetchAllGuru();
@@ -659,6 +692,33 @@ export default function AdminPortal({ handleLogout, daftarKelas }: AdminPortalPr
         }
 
         await supabase.from('profiles').insert([insertData]);
+
+        if (formTambahGuru.nama_ekstrakurikuler && formTambahGuru.nama_ekstrakurikuler.trim()) {
+          const ekskulName = formTambahGuru.nama_ekstrakurikuler.trim();
+          const { data: existingEkskul } = await supabase
+            .from('extracurriculars')
+            .select('id')
+            .ilike('nama_ekskul', ekskulName)
+            .maybeSingle();
+          let ekskulId = existingEkskul?.id;
+          if (!ekskulId) {
+            const kode = ekskulName.toUpperCase().replace(/[^A-Z0-9]+/g, '_');
+            const { data: newEkskul } = await supabase
+              .from('extracurriculars')
+              .insert({ kode_ekskul: kode, nama_ekskul: ekskulName })
+              .select('id')
+              .single();
+            ekskulId = newEkskul?.id;
+          }
+          if (ekskulId) {
+            await supabase.from('extracurricular_coaches').upsert({
+              ekskul_id: ekskulId,
+              user_id: newUser.id,
+              is_primary: true,
+              active: true,
+            }, { onConflict: 'ekskul_id,user_id' });
+          }
+        }
       }
 
       toast.success('Sukses! Akun Guru baru berhasil dibuat. Password Default: guru123');
@@ -739,6 +799,33 @@ export default function AdminPortal({ handleLogout, daftarKelas }: AdminPortalPr
             
             if (!eUser && userBaru) {
               await supabase.from('profiles').insert([{ user_id: userBaru.id, nama_lengkap: guru.nama_lengkap, mapel: guru.mata_pelajaran || null, is_wali_kelas: String(guru.is_wali_kelas).toLowerCase() === 'true', kelas_wali: guru.kelas_wali || null, nama_ekstrakurikuler: guru.nama_ekstrakurikuler || null }]);
+
+              if (guru.nama_ekstrakurikuler && String(guru.nama_ekstrakurikuler).trim()) {
+                const ekskulName = String(guru.nama_ekstrakurikuler).trim();
+                const { data: existingEkskul } = await supabase
+                  .from('extracurriculars')
+                  .select('id')
+                  .ilike('nama_ekskul', ekskulName)
+                  .maybeSingle();
+                let ekskulId = existingEkskul?.id;
+                if (!ekskulId) {
+                  const kode = ekskulName.toUpperCase().replace(/[^A-Z0-9]+/g, '_');
+                  const { data: newEkskul } = await supabase
+                    .from('extracurriculars')
+                    .insert({ kode_ekskul: kode, nama_ekskul: ekskulName })
+                    .select('id')
+                    .single();
+                  ekskulId = newEkskul?.id;
+                }
+                if (ekskulId) {
+                  await supabase.from('extracurricular_coaches').upsert({
+                    ekskul_id: ekskulId,
+                    user_id: userBaru.id,
+                    is_primary: true,
+                    active: true,
+                  }, { onConflict: 'ekskul_id,user_id' });
+                }
+              }
             }
           }
           toast.success('Import massal selesai. Password default seluruh guru baru adalah: 123456');

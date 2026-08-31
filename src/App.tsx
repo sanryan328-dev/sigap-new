@@ -169,7 +169,21 @@ export default function App() {
           username: userData.username,
           role: userData.role,
         };
-        setAuth(authUser, profilTarik as UserProfile);
+
+        const { data: coachData } = await supabase
+          .from('extracurricular_coaches')
+          .select('ekskul_id, is_primary, extracurriculars!inner(nama_ekskul)')
+          .eq('user_id', userData.id)
+          .eq('active', true);
+
+        const ekskulAssignments = (coachData || []).map((c: any) => ({
+          ekskul_id: c.ekskul_id,
+          nama_ekskul: c.extracurriculars?.nama_ekskul || '',
+          is_primary: c.is_primary,
+        }));
+
+        setAuth(authUser, { ...profilTarik, ekskul_assignments: ekskulAssignments } as UserProfile);
+        localStorage.setItem('sigap_session', JSON.stringify({ user: authUser, profile: { ...profilTarik, ekskul_assignments: ekskulAssignments } }));
       } catch {
         localStorage.removeItem('sigap_session');
       } finally {
@@ -309,10 +323,24 @@ export default function App() {
       }
 
       const authUser = { id: userData.id, username: userData.username, role: userData.role };
-      setAuth(authUser, profilTarik);
+
+      const { data: coachData } = await supabase
+        .from('extracurricular_coaches')
+        .select('ekskul_id, is_primary, extracurriculars!inner(nama_ekskul)')
+        .eq('user_id', userData.id)
+        .eq('active', true);
+
+      const ekskulAssignments = (coachData || []).map((c: any) => ({
+        ekskul_id: c.ekskul_id,
+        nama_ekskul: c.extracurriculars?.nama_ekskul || '',
+        is_primary: c.is_primary,
+      }));
+
+      const profilLengkap = { ...profilTarik, ekskul_assignments: ekskulAssignments };
+      setAuth(authUser, profilLengkap);
 
       /* Simpan sesi ke localStorage supaya tahan refresh */
-      localStorage.setItem('sigap_session', JSON.stringify({ user: authUser, profile: profilTarik }));
+      localStorage.setItem('sigap_session', JSON.stringify({ user: authUser, profile: profilLengkap }));
 
       if (userData.role === "kurikulum") {
         setKurikulumPanel(null);
@@ -331,9 +359,10 @@ export default function App() {
 
       const cekMapel = profilTarik.mapel ? String(profilTarik.mapel).trim() : "";
       const cekEkskul = profilTarik.nama_ekstrakurikuler ? String(profilTarik.nama_ekstrakurikuler).trim() : "";
+      const hasEkskulAssignment = profilLengkap?.ekskul_assignments?.length > 0;
       const isWali = profilTarik.is_wali_kelas === true || String(profilTarik.is_wali_kelas).toLowerCase() === "true";
 
-      const belumAdaTugasSamaSekali = cekMapel === "" && cekEkskul === "" && !isWali;
+      const belumAdaTugasSamaSekali = cekMapel === "" && cekEkskul === "" && !hasEkskulAssignment && !isWali;
       const isAkunKhususPiket = userData.role === "guru_piket";
       const isAkunKhususBK = userData.role === "guru_bk";
       const isAkunKhususKurikulum = userData.role === "kurikulum";
@@ -366,8 +395,56 @@ export default function App() {
           updated_at: new Date().toISOString(),
         }).eq("user_id", profile.user_id).select().single();
       if (error) throw error;
-      toast.success("Profil berhasil diperbarui!");
-      setAuth(user!, profileDiperbarui as UserProfile);
+
+      if (dataInput.namaEkskul) {
+        const ekskulName = dataInput.namaEkskul.trim();
+        const { data: existingEkskul } = await supabase
+          .from('extracurriculars')
+          .select('id')
+          .ilike('nama_ekskul', ekskulName)
+          .maybeSingle();
+
+        let ekskulId = existingEkskul?.id;
+        if (!ekskulId) {
+          const kode = ekskulName.toUpperCase().replace(/[^A-Z0-9]+/g, '_');
+          const { data: newEkskul } = await supabase
+            .from('extracurriculars')
+            .insert({ kode_ekskul: kode, nama_ekskul: ekskulName })
+            .select('id')
+            .single();
+          ekskulId = newEkskul?.id;
+        }
+
+        if (ekskulId) {
+          await supabase.from('extracurricular_coaches').upsert({
+            ekskul_id: ekskulId,
+            user_id: Number(profile.user_id),
+            is_primary: true,
+            active: true,
+          }, { onConflict: 'ekskul_id,user_id' });
+        }
+
+        const { data: coachData } = await supabase
+          .from('extracurricular_coaches')
+          .select('ekskul_id, is_primary, extracurriculars!inner(nama_ekskul)')
+          .eq('user_id', Number(profile.user_id))
+          .eq('active', true);
+
+        const ekskulAssignments = (coachData || []).map((c: any) => ({
+          ekskul_id: c.ekskul_id,
+          nama_ekskul: c.extracurriculars?.nama_ekskul || '',
+          is_primary: c.is_primary,
+        }));
+
+        setAuth(user!, { ...profileDiperbarui, ekskul_assignments: ekskulAssignments } as UserProfile);
+      } else {
+        await supabase.from('extracurricular_coaches')
+          .update({ active: false })
+          .eq('user_id', Number(profile.user_id));
+
+        setAuth(user!, { ...profileDiperbarui, ekskul_assignments: [] } as UserProfile);
+      }
+
       setPerluKonfirmasi(false);
     } catch (err: any) { toast.error(`Gagal: ${err.message}`); } finally { setLoadingKonfirmasi(false); }
   };

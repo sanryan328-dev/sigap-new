@@ -62,12 +62,12 @@ export default function RoleSwitcher({ onSelect, onLogout }: RoleSwitcherProps) 
           ring: 'ring-amber-500/20',
         }]
       : []),
-    ...(profile?.nama_ekstrakurikuler
+    ...((profile?.ekskul_assignments && profile.ekskul_assignments.length > 0) || profile?.nama_ekstrakurikuler
       ? [{
           role: 'pembina_ekskul' as const,
           icon: Trophy,
           label: 'Panel Pembina Ekskul',
-          desc: `Input jurnal, absensi, dan nilai ${profile.nama_ekstrakurikuler}.`,
+          desc: `Input jurnal, absensi, dan nilai ${profile?.ekskul_assignments && profile.ekskul_assignments.length > 0 ? profile.ekskul_assignments.map(e => e.nama_ekskul).join(', ') : profile?.nama_ekstrakurikuler || 'Ekskul'}.`,
           color: 'border-violet-200/60',
           gradient: 'from-violet-500 to-purple-600',
           ring: 'ring-violet-500/20',
