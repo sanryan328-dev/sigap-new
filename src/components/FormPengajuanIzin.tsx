@@ -116,6 +116,7 @@ export default function FormPengajuanIzin({ open, onClose, userId, namaLengkap }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
     if (!alasanDetail.trim()) {
       toast.error('Alasan detail wajib diisi');
       return;
@@ -130,34 +131,40 @@ export default function FormPengajuanIzin({ open, onClose, userId, namaLengkap }
     let suratUrl: string | null = null;
     let tugasUrl: string | null = null;
 
-    if (file) {
-      setUploading(true);
-      suratUrl = await uploadToBucket('surat-izin', file, userId);
-      if (!suratUrl) { setSubmitting(false); return; }
-    }
-
-    if (tugasFile) {
-      setUploading(true);
-      tugasUrl = await uploadToBucket('tugas-titipan', tugasFile, userId);
-      if (!tugasUrl) { setSubmitting(false); return; }
-    }
-
-    setUploading(false);
-
-    const payload = {
-      user_id: teacherId,
-      tanggal_absen: new Date().toISOString().split('T')[0],
-      status_izin: statusIzin,
-      alasan_detail: alasanDetail.trim(),
-      file_surat_keterangan: suratUrl,
-      titipan_tugas_kelas: titipanTugas.trim() || null,
-      tugas_attachment_url: tugasUrl,
-      status_verifikasi: 'pending',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
     try {
+      if (file) {
+        setUploading(true);
+        suratUrl = await uploadToBucket('surat-izin', file, userId);
+        if (!suratUrl) {
+          toast.error('Gagal upload surat izin. Silakan coba lagi.');
+          return;
+        }
+      }
+
+      if (tugasFile) {
+        setUploading(true);
+        tugasUrl = await uploadToBucket('tugas-titipan', tugasFile, userId);
+        if (!tugasUrl) {
+          toast.error('Gagal upload berkas tugas. Silakan coba lagi.');
+          return;
+        }
+      }
+
+      setUploading(false);
+
+      const payload = {
+        user_id: teacherId,
+        tanggal_absen: new Date().toISOString().split('T')[0],
+        status_izin: statusIzin,
+        alasan_detail: alasanDetail.trim(),
+        file_surat_keterangan: suratUrl,
+        titipan_tugas_kelas: titipanTugas.trim() || null,
+        tugas_attachment_url: tugasUrl,
+        status_verifikasi: 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
       if (!navigator.onLine) {
         await addToOfflineQueue(userId, 'teacher_absences', payload);
         toast.success('Pengajuan izin disimpan secara offline. Akan terkirim saat online.');
@@ -171,6 +178,7 @@ export default function FormPengajuanIzin({ open, onClose, userId, namaLengkap }
     } catch (err: any) {
       toast.error(err.message || 'Gagal mengajukan izin');
     } finally {
+      setUploading(false);
       setSubmitting(false);
     }
   };
