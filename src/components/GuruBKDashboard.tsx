@@ -12,7 +12,7 @@ interface GuruBKDashboardProps {
   daftarKelas: string[];
 }
 
-export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftarKelas }: GuruBKDashboardProps) {
+export default function GuruBKDashboard({ handleLogout: handleLogoutProp }: GuruBKDashboardProps) {
   const profile = useAuthStore((s) => s.profile);
   const userId = useAuthStore(selectUserId);
   const storeLogout = useAuthStore((s) => s.logout);
@@ -25,6 +25,10 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
   const [listMasterPelanggaran, setListMasterPelanggaran] = useState<any[]>([]);
   const [listKasus, setListKasus] = useState<any[]>([]);
   
+  // Kelas binaan Guru BK (sinkron dari teaching_schedules / jadwal mengajar)
+  const [kelasBinaan, setKelasBinaan] = useState<string[]>([]);
+  const [loadingKelasBinaan, setLoadingKelasBinaan] = useState(true);
+
   // State Filter Rombel Siswa pada Form Input
   const [filterKelasInput, setFilterKelasInput] = useState<string>('');
 
@@ -48,19 +52,78 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
   const [isEditKasus, setIsEditKasus] = useState(false);
 
   useEffect(() => {
-    fetchSiswa();
     fetchMasterPelanggaran();
     fetchKasusBK();
   }, [subMenuBK]);
 
   // ==========================================
+  // 🏫 FETCH KELAS BINAAN GURU BK (SINKRONISASI KELAS)
+  // Menggabungkan data dari tabel teaching_schedules dan bk_assignments, lalu hapus duplikatnya.
+  // ==========================================
+  useEffect(() => {
+    if (!userId) return;
+    const rawUserId = typeof userId === 'string' ? parseInt(userId) : userId;
+
+    const fetchSinkronisasiKelas = async () => {
+      setLoadingKelasBinaan(true);
+      try {
+        // 1. Ambil data dari teaching_schedules (Jadwal Mapel)
+        const { data: mapelData, error: mapelError } = await supabase
+          .from('teaching_schedules')
+          .select('kelas')
+          .eq('user_id', rawUserId);
+
+        if (mapelError) throw mapelError;
+
+        // 2. Ambil data dari bk_assignments (Penugasan BK) - abaikan jika tabel tidak ada
+        const { data: bkData } = await supabase
+          .from('bk_assignments')
+          .select('kelas')
+          .eq('user_id', rawUserId);
+
+        // Gabungkan array dari kedua tabel (tambahkan fallback array kosong jika error/null)
+        const combinedClasses = [
+          ...(mapelData?.map((item: any) => item.kelas) || []),
+          ...(bkData?.map((item: any) => item.kelas) || [])
+        ];
+
+        // 3. Hapus duplikat, hapus nilai kosong, dan urutkan abjad
+        const uniqueClasses = Array.from(new Set(combinedClasses))
+          .map((k: any) => k?.trim())
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+        // 4. Set ke state dropdown
+        setKelasBinaan(uniqueClasses);
+      } catch (err: any) {
+        console.error('Gagal sinkronisasi data kelas BK:', err);
+        setKelasBinaan([]);
+      } finally {
+        setLoadingKelasBinaan(false);
+      }
+    };
+
+    fetchSinkronisasiKelas();
+  }, [userId]);
+
+  // ==========================================
+  // 🎓 CASCADE: fetch siswa HANYA untuk kelas yang dipilih
+  // ==========================================
+  useEffect(() => {
+    if (!filterKelasInput) return;
+    fetchSiswa(filterKelasInput);
+  }, [filterKelasInput]);
+
+  // ==========================================
   // 📥 FETCH DATA GURU BK & MASTER DATA
   // ==========================================
-  const fetchSiswa = async () => {
-    const { data } = await supabase
+  const fetchSiswa = async (kelasFilter?: string) => {
+    let query = supabase
       .from('students')
       .select('id, nama_siswa, kelas')
       .order('nama_siswa', { ascending: true });
+    if (kelasFilter) query = query.eq('kelas', kelasFilter);
+    const { data } = await query;
     if (data) setListSiswa(data);
   };
 
@@ -279,8 +342,20 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
                   className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:border-purple-500" required
                 >
                   <option value="">-- Pilih Kelas --</option>
-                  {daftarKelas.map(k => <option key={k} value={k}>{k}</option>)}
+                  {loadingKelasBinaan ? (
+                    <option value="" disabled>Memuat kelas binaan...</option>
+                  ) : Array.from(new Set([
+                    ...kelasBinaan,
+                    ...(isEditKasus && formKasus.kelas ? [formKasus.kelas] : []),
+                  ])).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }                  )).map(k => (
+                    <option key={k} value={k}>{k}</option>
+                  ))}
                 </select>
+                {!loadingKelasBinaan && kelasBinaan.length === 0 && !(isEditKasus && formKasus.kelas) && (
+                  <p className="mt-1 text-[10px] text-amber-600">
+                    Belum ada kelas binaan. Guru BK ini belum memiliki jadwal mengajar di <em>teaching_schedules</em>.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -732,7 +807,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
                 className="p-1.5 border border-slate-300 rounded-lg text-sm bg-white font-medium"
               >
                 <option value="">-- Semua Kelas --</option>
-                {daftarKelas.map((k) => <option key={k} value={k}>{k}</option>)}
+                {kelasBinaan.map((k) => <option key={k} value={k}>{k}</option>)}
               </select>
             </div>
           </div>

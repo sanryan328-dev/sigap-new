@@ -24,7 +24,6 @@ import KurikulumPortal from "./components/KurikulumPortal";
 import KepsekPortal from "./components/KepsekPortal";
 import RoleSwitcher from "./components/RoleSwitcher";
 import RekapKehadiranGuruMapel from "./components/RekapKehadiranGuruMapel";
-import ExportScoreModal from "./components/ExportScoreModal";
 
 interface Siswa {
   id: string;
@@ -43,7 +42,7 @@ export default function App() {
   
   const [kurikulumPanel, setKurikulumPanel] = useState<'kurikulum' | 'wali_kelas' | 'pembina_ekskul' | 'guru_piket' | 'guru_mapel' | null>(null);
   
-  const [subMenu, setSubMenu] = useState<"jurnal" | "nilai" | "riwayat-nilai" | "riwayat-jurnal" | "rekap-kehadiran" | "unduh-nilai" | null>(null);
+  const [subMenu, setSubMenu] = useState<"jurnal" | "nilai" | "riwayat-nilai" | "riwayat-jurnal" | "rekap-kehadiran" | null>(null);
   const [subMenuWali, setSubMenuWali] = useState<"kehadiran" | "bk" | null>(null);
 
   const [perluKonfirmasi, setPerluKonfirmasi] = useState(false);
@@ -668,7 +667,6 @@ export default function App() {
       if (subMenu === 'riwayat-nilai') return <RiwayatNilai setSubMenu={setSubMenu} kelas={kelas} mataPelajaran={mataPelajaran} />;
       if (subMenu === 'riwayat-jurnal') return <RiwayatJurnal setSubMenu={setSubMenu} kelas={kelas} mataPelajaran={mataPelajaran} />;
       if (subMenu === 'rekap-kehadiran') return <RekapKehadiranGuruMapel onBack={() => setSubMenu(null)} />;
-      if (subMenu === 'unduh-nilai') return <ExportScoreModalWrapper setSubMenu={setSubMenu} daftarKelas={daftarKelas} />;
       return <FormJurnal currentRole={activeRoleView} setSubMenu={handleBackFromJurnal} kelas={kelas} setKelas={setKelas} mataPelajaran={mataPelajaran} setMataPelajaran={setMataPelajaran} jamMulai={jamMulai} setJamMulai={setJamMulai} durasiJam={durasiJam} setDurasiJam={setDurasiJam} materi={materi} setMateri={setMateri} catatan={catatan} setCatatan={setCatatan} daftarKelas={daftarKelas} daftarSiswa={daftarSiswa} presensi={presensi} handleStatusChange={handleStatusChange} handleSubmitJurnal={handleSubmitJurnal} loadingSiswa={loadingSiswa} loadingSimpan={loadingSimpan} errorJadwal={errorJadwal} />;
     }
   }
@@ -704,7 +702,6 @@ export default function App() {
     if (subMenu === "riwayat-nilai") return <RiwayatNilai setSubMenu={setSubMenu} kelas={kelas} mataPelajaran={mataPelajaran} />;
     if (subMenu === "riwayat-jurnal") return <RiwayatJurnal setSubMenu={setSubMenu} kelas={kelas} mataPelajaran={mataPelajaran} />;
     if (subMenu === "rekap-kehadiran") return <RekapKehadiranGuruMapel onBack={() => setSubMenu(null)} />;
-    if (subMenu === "unduh-nilai") return <ExportScoreModalWrapper setSubMenu={setSubMenu} daftarKelas={daftarKelas} />;
   }
 
   if (activeRoleView === "wali_kelas") {
@@ -722,18 +719,3 @@ export default function App() {
   );
 }
 
-function ExportScoreModalWrapper({ setSubMenu, daftarKelas }: { setSubMenu: (menu: null) => void; daftarKelas: string[] }) {
-  return (
-    <div className="min-h-screen bg-slate-50 p-6 flex flex-col items-center">
-      <div className="w-full max-w-4xl">
-        <button
-          onClick={() => setSubMenu(null)}
-          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-lg transition-colors cursor-pointer mb-6"
-        >
-          ⬅️ Panel Guru Mapel
-        </button>
-        <ExportScoreModal open={true} onClose={() => setSubMenu(null)} daftarKelas={daftarKelas} />
-      </div>
-    </div>
-  );
-}

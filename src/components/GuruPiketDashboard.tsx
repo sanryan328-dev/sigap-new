@@ -6,7 +6,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import {
-  Repeat, LogOut, CheckCircle, XCircle, Eye, X, FileText, Image, Loader2, Lock, Calendar,
+  Repeat, LogOut, CheckCircle, XCircle, Eye, X, FileText, Image, Loader2, Lock, Calendar, Download, Paperclip, CalendarX,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthStore, selectUserId, selectPicketAccessGranted, selectPicketDay } from '../store/useAuthStore';
@@ -24,7 +24,7 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
   const storeLogout = useAuthStore((s) => s.logout);
 
   const handleLogout = handleLogoutProp ?? storeLogout;
-  const [subMenuPiket, setSubMenuPiket] = useState<'validasi_absen' | 'radar_piket' | null>(null);
+  const [subMenuPiket, setSubMenuPiket] = useState<'validasi_absen' | 'radar_piket' | 'tugas_piket' | null>(null);
   const [loading, setLoading] = useState(false);
 
   // State Data Master
@@ -33,7 +33,7 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
 
   // State Validasi Izin (ACC)
   const [listAbsenGuru, setListAbsenGuru] = useState<any[]>([]);
-  const [fileModal, setFileModal] = useState<{ url: string; nama: string } | null>(null);
+  const [detailModal, setDetailModal] = useState<any | null>(null);
   const [verifLoading, setVerifLoading] = useState<string | null>(null);
 
   // State Radar Harian
@@ -43,6 +43,15 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
 
   // State Notifikasi BK
   const [bkNotifications, setBkNotifications] = useState<any[]>([]);
+
+  // State Guru Piket Tasks
+  const [piketTasks, setPiketTasks] = useState<any[]>([]);
+  const [taskTitle, setTaskTitle] = useState('');
+  const [taskDescription, setTaskDescription] = useState('');
+  const [taskClass, setTaskClass] = useState('');
+  const [taskPriority, setTaskPriority] = useState<'low' | 'medium' | 'high'>('medium');
+  const [taskStatusFilter, setTaskStatusFilter] = useState<'all' | 'pending' | 'done'>('all');
+  const [taskLoading, setTaskLoading] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -58,6 +67,9 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
     }
     if (subMenuPiket === 'radar_piket') {
       fetchRadarHarian();
+    }
+    if (subMenuPiket === 'tugas_piket') {
+      fetchPiketTasks();
     }
   }, [subMenuPiket]);
 
@@ -97,14 +109,108 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
   };
 
   // ==========================================
+  // 📋 FITUR: TUGAS PIKET (INPUT & CEK)
+  // ==========================================
+  const fetchPiketTasks = async () => {
+    setTaskLoading(true);
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('teacher_absences')
+        .select('*')
+        .eq('tanggal_absen', todayStr)
+        .not('titipan_tugas_kelas', 'is', null)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      const profiles = listProfiles.length > 0
+        ? listProfiles
+        : (await supabase.from('profiles').select('user_id, nama_lengkap')).data || [];
+      const withNames = (data || []).map(a => ({
+        ...a,
+        profiles: profiles.find(p => p.user_id === a.user_id) || null,
+        isOwnTask: a.user_id === parseInt(userId),
+      }));
+      setPiketTasks(withNames || []);
+    } catch (err: any) {
+      toast.error(`Gagal memuat tugas piket: ${err.message}`);
+    } finally {
+      setTaskLoading(false);
+    }
+  };
+
+  const handleCreatePiketTask = async () => {
+    if (!taskTitle.trim()) {
+      toast.error('Judul tugas wajib diisi');
+      return;
+    }
+    const teacherId = parseInt(userId);
+    if (!userId || Number.isNaN(teacherId)) {
+      toast.error('Data guru tidak valid');
+      return;
+    }
+    setTaskLoading(true);
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const payload = {
+        user_id: teacherId,
+        tanggal_absen: todayStr,
+        status_izin: 'izin_keperluan' as const,
+        alasan_detail: `[TUGAS PIKET] ${taskTitle.trim()}${taskDescription.trim() ? '\n' + taskDescription.trim() : ''}${taskClass.trim() ? '\nKelas: ' + taskClass.trim() : ''}`,
+        status_verifikasi: 'diverifikasi_piket' as const,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await supabase.from('teacher_absences').insert([payload]);
+      if (error) throw error;
+      toast.success('Tugas piket berhasil dibuat!');
+      setTaskTitle('');
+      setTaskDescription('');
+      setTaskClass('');
+      setTaskPriority('medium');
+      fetchPiketTasks();
+    } catch (err: any) {
+      toast.error(`Gagal membuat tugas: ${err.message}`);
+    } finally {
+      setTaskLoading(false);
+    }
+  };
+
+  const handleToggleTaskDone = async (id: string, currentAlasan: string) => {
+    try {
+      const isDone = currentAlasan.startsWith('[SELESAI]');
+      const newAlasan = isDone
+        ? currentAlasan.replace('[SELESAI] ', '')
+        : `[SELESAI] ${currentAlasan}`;
+      const { error } = await supabase
+        .from('teacher_absences')
+        .update({ alasan_detail: newAlasan, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+      toast.success(isDone ? 'Tugas dikembalikan ke pending' : 'Tugas ditandai selesai!');
+      fetchPiketTasks();
+    } catch (err: any) {
+      toast.error(`Gagal update tugas: ${err.message}`);
+    }
+  };
+
+  const filteredPiketTasks = piketTasks.filter(t => {
+    if (taskStatusFilter === 'done') return t.alasan_detail?.startsWith('[SELESAI]');
+    if (taskStatusFilter === 'pending') return !t.alasan_detail?.startsWith('[SELESAI]');
+    return true;
+  });
+
+  // ==========================================
   // 📋 FITUR 1: ACC / VALIDASI IZIN PENDIDIK
   // ==========================================
   const fetchPengajuanIzin = async () => {
     setLoading(true);
     try {
+      const todayStr = new Date().toISOString().split('T')[0];
       const { data, error } = await supabase
         .from('teacher_absences')
         .select('*')
+        .eq('tanggal_absen', todayStr)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -117,7 +223,7 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
       }));
       setListAbsenGuru(withNames || []);
     } catch (err: any) {
-      console.error("Gagal memuat izin guru:", err.message);
+      toast.error(`Gagal memuat izin guru: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -329,16 +435,13 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
                           )}
                         </td>
                         <td>
-                          {absen.file_surat_keterangan ? (
+                          {absen.file_surat_keterangan || absen.tugas_attachment_url ? (
                             <button
-                              onClick={() => setFileModal({
-                                url: absen.file_surat_keterangan,
-                                nama: namaGuru,
-                              })}
+                              onClick={() => setDetailModal(absen)}
                               className="btn btn-ghost btn-xs gap-1 text-blue-600"
                             >
                               <Eye className="size-3.5" />
-                              Lihat
+                              Lihat Detail
                             </button>
                           ) : (
                             <span className="text-[10px] text-slate-400">-</span>
@@ -388,71 +491,349 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
           </div>
         </div>
 
-        {/* Modal Lihat Bukti */}
+        {/* Modal Detail Validasi Izin */}
         <dialog
-          className={`modal ${fileModal ? 'modal-open' : ''}`}
-          onClick={(e) => { if (e.target === e.currentTarget) setFileModal(null); }}
+          className={`modal ${detailModal ? 'modal-open' : ''}`}
+          onClick={(e) => { if (e.target === e.currentTarget) setDetailModal(null); }}
         >
-          <div className="modal-box max-w-lg">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
-                <FileText className="size-4 text-blue-600" />
-                Bukti Surat Izin &mdash; {fileModal?.nama}
-              </h3>
-              <button onClick={() => setFileModal(null)} className="btn btn-ghost btn-xs btn-square">
+          <div className="modal-box max-w-2xl p-0 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50">
+              <div>
+                <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Detail Pengajuan Izin
+                </span>
+                <h3 className="text-lg font-bold text-slate-800 mt-1">
+                  {detailModal?.profiles?.nama_lengkap || 'Guru Tidak Ditemukan'}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Tanggal: <span className="font-mono">{detailModal?.tanggal_absen || '-'}</span>
+                </p>
+              </div>
+              <button onClick={() => setDetailModal(null)} className="btn btn-ghost btn-xs btn-square rounded-lg">
                 <X className="size-4" />
               </button>
             </div>
-            {fileModal?.url.endsWith('.pdf') ? (
-              <div className="flex flex-col items-center gap-4 py-6">
-                <FileText className="size-16 text-rose-500" />
-                <p className="text-sm text-slate-600">File PDF</p>
-                <a
-                  href={fileModal.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-primary btn-sm"
-                >
-                  <Eye className="size-4" />
-                  Buka PDF
-                </a>
-              </div>
-            ) : (
-              <div className="flex justify-center">
-                <img
-                  src={fileModal?.url}
-                  alt="Bukti Surat Izin"
-                  className="max-h-96 rounded-lg object-contain"
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    target.style.display = 'none';
-                    const fallback = target.parentElement?.querySelector('.fallback');
-                    if (fallback) fallback.classList.remove('hidden');
-                  }}
-                />
-                <div className="fallback hidden flex-col items-center gap-3 py-6">
-                  <Image className="size-16 text-slate-300" />
-                  <p className="text-sm text-slate-500">Gambar tidak dapat dimuat</p>
-                  <a
-                    href={fileModal?.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-outline btn-sm"
-                  >
-                    <Eye className="size-4" />
-                    Buka di Tab Baru
-                  </a>
+
+            <div className="space-y-4 px-6 py-5">
+              {/* 1. Informasi Guru */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Jenis Izin</p>
+                  <span className="badge badge-soft badge-info badge-sm mt-1">
+                    {detailModal ? (izinLabels[detailModal.status_izin] || detailModal.status_izin) : '-'}
+                  </span>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status Verifikasi</p>
+                  <span className={detailModal
+                    ? (statusLabels[detailModal.status_verifikasi]?.className || 'badge badge-soft badge-warning')
+                    : 'badge badge-soft badge-warning'}>
+                    {detailModal
+                      ? (statusLabels[detailModal.status_verifikasi]?.label || detailModal.status_verifikasi)
+                      : '-'}
+                  </span>
                 </div>
               </div>
-            )}
-            <div className="modal-action">
-              <button onClick={() => setFileModal(null)} className="btn btn-ghost btn-sm">Tutup</button>
+
+              {/* 2. Alasan Detail */}
+              <div>
+                <p className="text-xs font-bold text-slate-700 mb-1">Alasan Detail</p>
+                <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700 whitespace-pre-wrap">
+                  {detailModal?.alasan_detail || '-'}
+                </div>
+              </div>
+
+              {/* 3. Instruksi / Titipan Tugas Kelas (highlight box) */}
+              <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4">
+                <p className="text-xs font-bold text-amber-800 mb-1 flex items-center gap-1.5">
+                  <Paperclip className="size-3.5" />
+                  Instruksi / Titipan Tugas Kelas
+                </p>
+                <p className="text-sm text-amber-900 whitespace-pre-wrap">
+                  {detailModal?.titipan_tugas_kelas || 'Tidak ada titipan tugas.'}
+                </p>
+              </div>
+
+              {/* 4. Dokumen Pendukung */}
+              <div>
+                <p className="text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                  <FileText className="size-3.5" />
+                  Dokumen Pendukung
+                </p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Surat Keterangan</p>
+                    {detailModal?.file_surat_keterangan ? (
+                      <div className="flex flex-wrap gap-2">
+                        <a
+                          href={detailModal.file_surat_keterangan}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-soft btn-primary btn-xs gap-1"
+                        >
+                          <Eye className="size-3.5" />
+                          Lihat
+                        </a>
+                        <a
+                          href={detailModal.file_surat_keterangan}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-soft btn-neutral btn-xs gap-1"
+                        >
+                          <Download className="size-3.5" />
+                          Unduh
+                        </a>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 italic">Tidak ada lampiran</p>
+                    )}
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Berkas Modul Tugas</p>
+                    {detailModal?.tugas_attachment_url ? (
+                      <div className="flex flex-wrap gap-2">
+                        <a
+                          href={detailModal.tugas_attachment_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-soft btn-primary btn-xs gap-1"
+                        >
+                          <Eye className="size-3.5" />
+                          Lihat
+                        </a>
+                        <a
+                          href={detailModal.tugas_attachment_url}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-soft btn-neutral btn-xs gap-1"
+                        >
+                          <Download className="size-3.5" />
+                          Unduh
+                        </a>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 italic">Tidak ada lampiran</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer: Aksi Validasi */}
+            <div className="flex items-center justify-end gap-2 border-t border-slate-100 px-6 py-4">
+              {detailModal?.status_verifikasi === 'pending' ? (
+                <>
+                  <button
+                    onClick={() => {
+                      const id = detailModal.id;
+                      setDetailModal(null);
+                      handleVerifikasiAbsen(id, 'ditolak');
+                    }}
+                    disabled={verifLoading === detailModal?.id}
+                    className="btn btn-soft btn-error btn-sm gap-1"
+                  >
+                    {verifLoading === detailModal?.id ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <XCircle className="size-4" />
+                    )}
+                    Tolak
+                  </button>
+                  <button
+                    onClick={() => {
+                      const id = detailModal.id;
+                      setDetailModal(null);
+                      handleVerifikasiAbsen(id, 'diverifikasi_piket');
+                    }}
+                    disabled={verifLoading === detailModal?.id}
+                    className="btn btn-soft btn-success btn-sm gap-1"
+                  >
+                    {verifLoading === detailModal?.id ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <CheckCircle className="size-4" />
+                    )}
+                    Setujui
+                  </button>
+                </>
+              ) : (
+                <button onClick={() => setDetailModal(null)} className="btn btn-ghost btn-sm">Tutup</button>
+              )}
             </div>
           </div>
           <form method="dialog" className="modal-backdrop">
-            <button onClick={() => setFileModal(null)}>close</button>
+            <button onClick={() => setDetailModal(null)}>close</button>
           </form>
         </dialog>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // 📋 SUB-MENU: TUGAS PIKET HARI INI
+  // ==========================================
+  if (subMenuPiket === 'tugas_piket') {
+    return (
+      <div className="min-h-screen bg-slate-50 p-4 sm:p-6 flex flex-col items-center w-full">
+        <div className="w-full max-w-4xl space-y-4">
+
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl bg-white px-6 py-4 shadow-sm border border-slate-100">
+            <div>
+              <span className="text-sm font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                Meja Piket
+              </span>
+              <h2 className="text-lg font-bold text-slate-800 mt-1">Tugas Piket Hari Ini</h2>
+              <p className="text-sm text-slate-500 mt-0.5">
+                <span className="font-semibold text-emerald-600">{piketTasks.filter(t => !t.alasan_detail?.startsWith('[SELESAI]')).length}</span> tugas pending
+              </p>
+            </div>
+            <button
+              onClick={() => setSubMenuPiket(null)}
+              className="btn btn-ghost btn-sm text-slate-600"
+            >
+              <X className="size-4" />
+              Kembali
+            </button>
+          </div>
+
+          {/* Form Input Tugas Baru */}
+          <div className="rounded-2xl bg-white px-6 py-5 shadow-sm border border-slate-100 space-y-4">
+            <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+              <span className="p-1.5 bg-emerald-50 rounded-lg">➕</span>
+              Input Tugas Baru
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-600">Judul Tugas *</label>
+                <input
+                  type="text"
+                  value={taskTitle}
+                  onChange={(e) => setTaskTitle(e.target.value)}
+                  placeholder="Contoh: Cek kebersihan kelas VIII A"
+                  className="input input-bordered input-sm w-full"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-600">Kelas Tujuan</label>
+                <input
+                  type="text"
+                  value={taskClass}
+                  onChange={(e) => setTaskClass(e.target.value)}
+                  placeholder="Contoh: VII A, VIII B"
+                  className="input input-bordered input-sm w-full"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-600">Detail / Instruksi</label>
+              <textarea
+                value={taskDescription}
+                onChange={(e) => setTaskDescription(e.target.value)}
+                rows={2}
+                placeholder="Instruksi detail untuk tugas piket ini..."
+                className="textarea textarea-bordered w-full text-sm"
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <select
+                value={taskPriority}
+                onChange={(e) => setTaskPriority(e.target.value as 'low' | 'medium' | 'high')}
+                className="select select-bordered select-sm"
+              >
+                <option value="low">Low Priority</option>
+                <option value="medium">Medium Priority</option>
+                <option value="high">High Priority</option>
+              </select>
+              <button
+                onClick={handleCreatePiketTask}
+                disabled={taskLoading || !taskTitle.trim()}
+                className="btn btn-soft btn-emerald btn-sm gap-1"
+              >
+                {taskLoading ? <Loader2 className="size-3 animate-spin" /> : null}
+                Simpan Tugas
+              </button>
+            </div>
+          </div>
+
+          {/* Filter & Task List */}
+          <div className="rounded-2xl bg-white px-6 py-5 shadow-sm border border-slate-100 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-700">Daftar Tugas Hari Ini</h3>
+              <div className="flex gap-1.5">
+                {(['all', 'pending', 'done'] as const).map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setTaskStatusFilter(f)}
+                    className={`btn btn-xs ${taskStatusFilter === f ? 'btn-primary' : 'btn-ghost'}`}
+                  >
+                    {f === 'all' ? 'Semua' : f === 'pending' ? 'Pending' : 'Selesai'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {taskLoading ? (
+              <div className="text-center p-8 text-sm text-slate-400">
+                <Loader2 className="size-5 animate-spin inline-block mr-2" />
+                Memuat tugas piket...
+              </div>
+            ) : filteredPiketTasks.length === 0 ? (
+              <div className="text-center p-8 text-sm text-slate-400 italic">
+                Belum ada tugas piket hari ini.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredPiketTasks.map((task) => {
+                  const isDone = task.alasan_detail?.startsWith('[SELESAI]');
+                  const lines = (task.alasan_detail || '').replace(/^\[SELESAI\]\s*/, '').split('\n');
+                  const title = lines[0]?.replace(/^\[TUGAS PIKET\]\s*/, '') || 'Tugas';
+                  const desc = lines.slice(1).join('\n');
+                  return (
+                    <div
+                      key={task.id}
+                      className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${
+                        isDone
+                          ? 'border-emerald-200 bg-emerald-50/50 opacity-70'
+                          : 'border-slate-200 bg-white hover:border-emerald-300'
+                      }`}
+                    >
+                      <button
+                        onClick={() => handleToggleTaskDone(task.id, task.alasan_detail)}
+                        className={`mt-0.5 flex-shrink-0 size-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          isDone
+                            ? 'bg-emerald-500 border-emerald-500 text-white'
+                            : 'border-slate-300 hover:border-emerald-400'
+                        }`}
+                      >
+                        {isDone && <CheckCircle className="size-3" />}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-bold ${isDone ? 'line-through text-slate-500' : 'text-slate-800'}`}>
+                            {title}
+                          </span>
+                          {task.profiles?.nama_lengkap && (
+                            <span className="text-[10px] text-slate-400">oleh {task.profiles.nama_lengkap}</span>
+                          )}
+                        </div>
+                        {desc && <p className="text-xs text-slate-500 mt-0.5 whitespace-pre-wrap">{desc}</p>}
+                      </div>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        isDone ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {isDone ? 'Selesai' : 'Pending'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
@@ -768,11 +1149,17 @@ export default function GuruPiketDashboard({ handleLogout: handleLogoutProp, onS
           </div>
         ))}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <button onClick={() => setSubMenuPiket('validasi_absen')} className="flex flex-col items-start p-5 bg-white border border-slate-200 rounded-xl hover:border-blue-500 hover:shadow-md transition-all text-left group cursor-pointer">
             <div className="text-xl mb-2 p-2 bg-blue-50 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">📝</div>
             <h3 className="font-bold text-slate-800 text-sm group-hover:text-blue-600">Persetujuan Izin Guru</h3>
             <p className="text-[11px] text-slate-500 mt-1">Verifikasi permohonan izin/sakit guru yang masuk, lihat bukti surat, dan tinjau titipan tugas.</p>
+          </button>
+
+          <button onClick={() => setSubMenuPiket('tugas_piket')} className="flex flex-col items-start p-5 bg-white border border-slate-200 rounded-xl hover:border-emerald-500 hover:shadow-md transition-all text-left group cursor-pointer">
+            <div className="text-xl mb-2 p-2 bg-emerald-50 rounded-lg group-hover:bg-emerald-600 group-hover:text-white transition-colors">📋</div>
+            <h3 className="font-bold text-slate-800 text-sm group-hover:text-emerald-600">Tugas Piket Hari Ini</h3>
+            <p className="text-[11px] text-slate-500 mt-1">Input dan pantau tugas piket harian untuk guru dan staf sekolah.</p>
           </button>
 
           <button onClick={() => setSubMenuPiket('radar_piket')} className="flex flex-col items-start p-5 bg-white border border-slate-200 rounded-xl hover:border-indigo-500 hover:shadow-md transition-all text-left group cursor-pointer">
