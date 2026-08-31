@@ -12,7 +12,7 @@ interface GuruBKDashboardProps {
   daftarKelas: string[];
 }
 
-export default function GuruBKDashboard({ handleLogout: handleLogoutProp }: GuruBKDashboardProps) {
+export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftarKelas }: GuruBKDashboardProps) {
   const profile = useAuthStore((s) => s.profile);
   const userId = useAuthStore(selectUserId);
   const storeLogout = useAuthStore((s) => s.logout);
@@ -58,7 +58,8 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp }: Guru
 
   // ==========================================
   // 🏫 FETCH KELAS BINAAN GURU BK (SINKRONISASI KELAS)
-  // Menggabungkan data dari tabel teaching_schedules dan bk_assignments, lalu hapus duplikatnya.
+  // Sumber utama: JSON mata_pelajaran pada tabel profiles (array { mapel, kelas[] }).
+  // Fallback: mapel tunggal -> seluruh kelas sekolah, lalu teaching_schedules + bk_assignments.
   // ==========================================
   useEffect(() => {
     if (!userId) return;
@@ -67,33 +68,42 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp }: Guru
     const fetchSinkronisasiKelas = async () => {
       setLoadingKelasBinaan(true);
       try {
-        // 1. Ambil data dari teaching_schedules (Jadwal Mapel)
-        const { data: mapelData, error: mapelError } = await supabase
-          .from('teaching_schedules')
-          .select('kelas')
-          .eq('user_id', rawUserId);
+        let combinedClasses: string[] = [];
 
-        if (mapelError) throw mapelError;
+        // 1. Sumber utama: JSON mata_pelajaran di profil guru
+        const profileMp = profile?.mata_pelajaran;
+        if (Array.isArray(profileMp) && profileMp.length > 0) {
+          const validEntries = profileMp.filter((e: any) => e?.mapel?.trim() && Array.isArray(e.kelas) && e.kelas.length > 0);
+          if (validEntries.length > 0) {
+            validEntries.forEach((e: any) => {
+              combinedClasses = [...combinedClasses, ...e.kelas];
+            });
+          }
+        }
 
-        // 2. Ambil data dari bk_assignments (Penugasan BK) - abaikan jika tabel tidak ada
-        const { data: bkData } = await supabase
-          .from('bk_assignments')
-          .select('kelas')
-          .eq('user_id', rawUserId);
+        // 2. Fallback: mapel tunggal -> seluruh kelas sekolah
+        if (combinedClasses.length === 0 && profile?.mapel) {
+          combinedClasses = [...(daftarKelas || [])];
+        }
 
-        // Gabungkan array dari kedua tabel (tambahkan fallback array kosong jika error/null)
-        const combinedClasses = [
-          ...(mapelData?.map((item: any) => item.kelas) || []),
-          ...(bkData?.map((item: any) => item.kelas) || [])
-        ];
+        // 3. Fallback: jadwal mengajar + penugasan BK
+        if (combinedClasses.length === 0) {
+          const [{ data: mapelData }, { data: bkData }] = await Promise.all([
+            supabase.from('teaching_schedules').select('kelas').eq('user_id', rawUserId),
+            supabase.from('bk_assignments').select('kelas').eq('user_id', rawUserId),
+          ]);
+          combinedClasses = [
+            ...(mapelData?.map((item: any) => item.kelas) || []),
+            ...(bkData?.map((item: any) => item.kelas) || []),
+          ];
+        }
 
-        // 3. Hapus duplikat, hapus nilai kosong, dan urutkan abjad
+        // Hapus duplikat, hapus nilai kosong, dan urutkan
         const uniqueClasses = Array.from(new Set(combinedClasses))
           .map((k: any) => k?.trim())
           .filter(Boolean)
           .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
-        // 4. Set ke state dropdown
         setKelasBinaan(uniqueClasses);
       } catch (err: any) {
         console.error('Gagal sinkronisasi data kelas BK:', err);
@@ -104,7 +114,7 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp }: Guru
     };
 
     fetchSinkronisasiKelas();
-  }, [userId]);
+  }, [userId, profile, daftarKelas]);
 
   // ==========================================
   // 🎓 CASCADE: fetch siswa HANYA untuk kelas yang dipilih

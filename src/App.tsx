@@ -275,9 +275,14 @@ export default function App() {
   }, [isLoggedIn, activeRoleView, subMenuWali, profile, isAdmin]);
 
   useEffect(() => {
-    if (profile?.mata_pelajaran && Array.isArray(profile.mata_pelajaran)) {
-      setGuruMapelList(profile.mata_pelajaran.filter((e: any) => e?.mapel?.trim()));
-    } else if (profile?.mapel) {
+    if (profile?.mata_pelajaran && Array.isArray(profile.mata_pelajaran) && profile.mata_pelajaran.length > 0) {
+      const validEntries = profile.mata_pelajaran.filter((e: any) => e?.mapel?.trim());
+      if (validEntries.length > 0) {
+        setGuruMapelList(validEntries);
+        return;
+      }
+    }
+    if (profile?.mapel) {
       setGuruMapelList([{ mapel: profile.mapel, kelas: [...daftarKelas] }]);
     } else {
       setGuruMapelList([]);

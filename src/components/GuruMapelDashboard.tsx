@@ -62,33 +62,42 @@ export default function GuruMapelDashboard({
     const fetchSinkronisasiKelas = async () => {
       setLoadingClasses(true);
       try {
-        // 1. Ambil data dari teaching_schedules (Jadwal Mapel)
-        const { data: mapelData, error: mapelError } = await supabase
-          .from('teaching_schedules')
-          .select('kelas')
-          .eq('user_id', user.id);
+        let combinedClasses: string[] = [];
 
-        if (mapelError) throw mapelError;
+        // 1. Sumber utama: JSON mata_pelajaran di profil guru
+        const profileMp = profile?.mata_pelajaran;
+        if (Array.isArray(profileMp) && profileMp.length > 0) {
+          const validEntries = profileMp.filter((e: any) => e?.mapel?.trim() && Array.isArray(e.kelas) && e.kelas.length > 0);
+          if (validEntries.length > 0) {
+            validEntries.forEach((e: any) => {
+              combinedClasses = [...combinedClasses, ...e.kelas];
+            });
+          }
+        }
 
-        // 2. Ambil data dari bk_assignments (Penugasan BK) - abaikan jika tabel tidak ada
-        const { data: bkData, error: bkError } = await supabase
-          .from('bk_assignments')
-          .select('kelas')
-          .eq('user_id', user.id);
+        // 2. Fallback: mapel tunggal -> seluruh kelas sekolah
+        if (combinedClasses.length === 0 && profile?.mapel) {
+          combinedClasses = [...(daftarKelas || [])];
+        }
 
-        // Gabungkan array dari kedua tabel (tambahkan fallback array kosong jika error/null)
-        const combinedClasses = [
-          ...(mapelData?.map((item: any) => item.kelas) || []),
-          ...(bkData?.map((item: any) => item.kelas) || [])
-        ];
+        // 3. Fallback: jadwal mengajar + penugasan BK
+        if (combinedClasses.length === 0) {
+          const [{ data: mapelData }, { data: bkData }] = await Promise.all([
+            supabase.from('teaching_schedules').select('kelas').eq('user_id', user.id),
+            supabase.from('bk_assignments').select('kelas').eq('user_id', user.id),
+          ]);
+          combinedClasses = [
+            ...(mapelData?.map((item: any) => item.kelas) || []),
+            ...(bkData?.map((item: any) => item.kelas) || []),
+          ];
+        }
 
-        // 3. Hapus duplikat, hapus nilai kosong, dan urutkan abjad
+        // Hapus duplikat, hapus nilai kosong, dan urutkan
         const uniqueClasses = Array.from(new Set(combinedClasses))
           .map((k: any) => k?.trim())
           .filter(Boolean)
           .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
-        // 4. Set ke state dropdown
         setAvailableClasses(uniqueClasses);
       } catch (err) {
         console.error('Gagal sinkronisasi data kelas:', err);
@@ -99,7 +108,7 @@ export default function GuruMapelDashboard({
     };
 
     fetchSinkronisasiKelas();
-  }, [user?.id]);
+  }, [user?.id, profile, daftarKelas]);
 
   return (
     <motion.div
