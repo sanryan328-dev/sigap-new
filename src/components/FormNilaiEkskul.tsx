@@ -12,10 +12,12 @@ interface Profile {
 
 interface FormNilaiEkskulProps {
   profile: Profile;
+  ekskulId: string | null;
+  ekskulName: string;
   onBack: () => void;
 }
 
-export default function FormNilaiEkskul({ profile, onBack }: FormNilaiEkskulProps) {
+export default function FormNilaiEkskul({ profile, ekskulId, ekskulName, onBack }: FormNilaiEkskulProps) {
   const [anggota, setAnggota] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -28,10 +30,13 @@ export default function FormNilaiEkskul({ profile, onBack }: FormNilaiEkskulProp
   const fetchAnggota = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('student_ekskul')
-        .select('*')
-        .eq('nama_ekskul', profile.nama_ekstrakurikuler);
+      let query = supabase.from('student_ekskul').select('*');
+      if (ekskulId) {
+        query = query.eq('ekskul_id', ekskulId);
+      } else {
+        query = query.eq('nama_ekskul', ekskulName);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       if (data) {
         const { data: studentsData } = await supabase.from('students').select('id, nama_siswa, kelas, nisn');
@@ -71,8 +76,13 @@ export default function FormNilaiEkskul({ profile, onBack }: FormNilaiEkskulProp
           })
           .eq('id', a.id),
       );
-      await Promise.all(updates);
-      toast.success('Nilai ekstrakurikuler berhasil disimpan!');
+      const results = await Promise.all(updates);
+      const errors = results.filter(r => r.error);
+      if (errors.length > 0) {
+        toast.error(`Gagal menyimpan ${errors.length} data.`);
+      } else {
+        toast.success('Nilai ekstrakurikuler berhasil disimpan!');
+      }
     } catch (err: any) {
       toast.error('Gagal menyimpan nilai: ' + err.message);
     } finally {
@@ -86,13 +96,14 @@ export default function FormNilaiEkskul({ profile, onBack }: FormNilaiEkskulProp
     setSaving(true);
     try {
       const data = nilai[studentId] || { grade: 'B', description: '' };
-      await supabase
+      const { error } = await supabase
         .from('student_ekskul')
         .update({
           nilai_kualitatif: data.grade,
           deskripsi_kemajuan: data.description.trim() || getDefaultDescription(data.grade),
         })
         .eq('id', item.id);
+      if (error) throw error;
       toast.success(`Nilai ${item.students?.nama_siswa} berhasil disimpan.`);
     } catch (err: any) {
       toast.error('Gagal menyimpan: ' + err.message);
@@ -119,7 +130,6 @@ export default function FormNilaiEkskul({ profile, onBack }: FormNilaiEkskulProp
       className="flex min-h-dvh items-start justify-center bg-gradient-to-br from-slate-50 to-zinc-100 p-3 pt-6 sm:p-6"
     >
       <div className="w-full max-w-4xl space-y-5">
-        {/* ── Header ── */}
         <motion.div
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -129,7 +139,7 @@ export default function FormNilaiEkskul({ profile, onBack }: FormNilaiEkskulProp
           <div className="flex-1 flex-col items-start gap-1">
             <div className="badge badge-soft badge-violet badge-sm uppercase tracking-widest">Penilaian Ekskul</div>
             <h2 className="mt-0.5 text-xl font-extrabold text-slate-900 sm:text-2xl">
-              {profile.nama_ekstrakurikuler}
+              {ekskulName}
             </h2>
             <p className="text-sm font-medium text-slate-500">{profile.nama_lengkap}</p>
           </div>
@@ -141,7 +151,6 @@ export default function FormNilaiEkskul({ profile, onBack }: FormNilaiEkskulProp
           </div>
         </motion.div>
 
-        {/* ── Konten ── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -198,7 +207,6 @@ export default function FormNilaiEkskul({ profile, onBack }: FormNilaiEkskulProp
                       className="card card-border border-slate-200 bg-slate-50/50 transition-all duration-200 hover:border-violet-300 hover:shadow-sm"
                     >
                       <div className="card-body gap-3 p-4 sm:flex-row sm:items-end">
-                        {/* Info Siswa */}
                         <div className="min-w-0 flex-1">
                           <p className="font-bold text-slate-900 text-sm">
                             {item.students?.nama_siswa}
@@ -208,7 +216,6 @@ export default function FormNilaiEkskul({ profile, onBack }: FormNilaiEkskulProp
                           </p>
                         </div>
 
-                        {/* Grade */}
                         <div className="w-full sm:w-28">
                           <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
                             Nilai
@@ -231,7 +238,6 @@ export default function FormNilaiEkskul({ profile, onBack }: FormNilaiEkskulProp
                           </select>
                         </div>
 
-                        {/* Description */}
                         <div className="w-full flex-1">
                           <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
                             Deskripsi Capaian

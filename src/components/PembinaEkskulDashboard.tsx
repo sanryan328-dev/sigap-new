@@ -17,6 +17,7 @@ import {
 import FormNilaiEkskul from './FormNilaiEkskul';
 import EkskulAnalytics from './EkskulAnalytics';
 import { useAuthStore } from '../store/useAuthStore';
+import type { ExtracurricularAssignment } from '../store/useAuthStore';
 
 interface PembinaEkskulProps {
   setCurrentRole: (role: any) => void;
@@ -41,6 +42,12 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
   const [absensiEkskul, setAbsensiEkskul] = useState<{ [key: string]: string }>({});
 
   const [anggotaEkskul, setAnggotaEkskul] = useState<any[]>([]);
+  const [selectedEkskulIdx, setSelectedEkskulIdx] = useState(0);
+
+  const assignments: ExtracurricularAssignment[] = profile?.ekskul_assignments || [];
+  const activeAssignment = assignments[selectedEkskulIdx] || assignments[0];
+  const ekskulId = activeAssignment?.ekskul_id || null;
+  const ekskulName = activeAssignment?.nama_ekskul || profile?.nama_ekstrakurikuler || 'Ekskul';
 
   useEffect(() => {
     if (subMenu !== 'menu' && filterKelas) {
@@ -54,6 +61,12 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
     }
   }, [subMenu]);
 
+  useEffect(() => {
+    if (subMenu === 'anggota' || subMenu === 'nilai') {
+      fetchAnggotaEkskul();
+    }
+  }, [ekskulId]);
+
   const fetchSiswaPerKelas = async () => {
     const { data } = await supabase.from('students').select('id, nama_siswa, nisn, kelas').eq('kelas', filterKelas).order('nama_siswa');
     if (data) setDaftarSiswa(data);
@@ -61,10 +74,13 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
 
   const fetchAnggotaEkskul = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('student_ekskul')
-      .select('*')
-      .eq('nama_ekskul', profile.nama_ekstrakurikuler);
+    let query = supabase.from('student_ekskul').select('*');
+    if (ekskulId) {
+      query = query.eq('ekskul_id', ekskulId);
+    } else {
+      query = query.eq('nama_ekskul', ekskulName);
+    }
+    const { data, error } = await query;
     if (!error && data) {
       const { data: studentsData } = await supabase.from('students').select('id, nama_siswa, kelas, nisn');
       const studentMap = new Map((studentsData || []).map(s => [s.id, s]));
@@ -83,10 +99,13 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
   };
 
   const handleTambahAnggota = async (studentId: string) => {
-    const { error } = await supabase.from('student_ekskul').insert([{
+    const payload: any = {
       student_id: studentId,
-      nama_ekskul: profile.nama_ekstrakurikuler,
-    }]);
+      nama_ekskul: ekskulName,
+    };
+    if (ekskulId) payload.ekskul_id = ekskulId;
+
+    const { error } = await supabase.from('student_ekskul').insert([payload]);
     if (!error) {
       toast.success('Berhasil menambahkan anggota!');
       fetchAnggotaEkskul();
@@ -105,15 +124,17 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
     e.preventDefault();
     setLoading(true);
     try {
-      const { data: jurnal, error } = await supabase.from('teaching_journals').insert([{
-        user_id: profile.user_id,
+      const journalPayload: any = {
+        user_id: profile!.user_id,
         kelas: 'Ekskul',
-        mata_pelajaran: `Ekskul ${profile.nama_ekstrakurikuler}`,
+        mata_pelajaran: `Ekskul ${ekskulName}`,
         jam_ke: 'Kegiatan Sore',
         materi_pembelajaran: topik,
         catatan_kelas: catatan,
-      }]).select().single();
+      };
+      if (ekskulId) journalPayload.ekskul_id = ekskulId;
 
+      const { data: jurnal, error } = await supabase.from('teaching_journals').insert([journalPayload]).select().single();
       if (error) throw error;
 
       const dataAbsen = anggotaEkskul.map(a => ({
@@ -134,7 +155,39 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
     }
   };
 
-  // ── Render EkskulAnalytics ──
+  if (assignments.length === 0 && !profile?.nama_ekstrakurikuler) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex min-h-dvh items-start justify-center bg-gradient-to-br from-slate-50 to-zinc-100 p-3 pt-6 sm:p-6"
+      >
+        <div className="w-full max-w-2xl space-y-5">
+          <div className="navbar rounded-box border border-white/30 bg-white/80 shadow-lg backdrop-blur-md">
+            <div className="flex-1 flex-col items-start gap-1">
+              <div className="badge badge-soft badge-violet badge-sm uppercase tracking-widest">Dashboard Pembina</div>
+              <h2 className="mt-0.5 text-xl font-extrabold text-slate-900 sm:text-2xl">Ekstrakurikuler</h2>
+            </div>
+            <div className="flex-none gap-2">
+              {onSwitchRole && (
+                <button onClick={onSwitchRole} className="btn btn-soft btn-primary btn-sm">
+                  <Repeat className="size-3.5" /> Beralih Peran
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="card border border-violet-200/60 bg-white shadow-lg">
+            <div className="card-body items-center gap-3 py-12 text-center">
+              <Trophy className="size-10 text-slate-300" />
+              <p className="text-sm font-medium text-slate-400">Anda belum ditugaskan sebagai pembina ekskul.</p>
+              <p className="text-sm text-slate-400">Hubungi admin untuk penugasan pembina ekstrakurikuler.</p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
   if (subMenu === 'analytics') {
     return (
       <motion.div
@@ -148,8 +201,11 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
             <div className="flex-1 flex-col items-start gap-1">
               <div className="badge badge-soft badge-violet badge-sm uppercase tracking-widest">Dashboard Pembina</div>
               <h3 className="mt-0.5 text-sm font-bold text-slate-900">
-                Analitik {profile.nama_ekstrakurikuler}
+                Analitik {ekskulName}
               </h3>
+              {assignments.length > 1 && (
+                <p className="text-[10px] text-slate-500">{assignments.length} pembina aktif — data dibagikan bersama</p>
+              )}
             </div>
             <div className="flex-none">
               <button onClick={() => setSubMenu('menu')} className="btn btn-ghost btn-sm">
@@ -157,7 +213,7 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
               </button>
             </div>
           </div>
-          <EkskulAnalytics />
+          <EkskulAnalytics ekskulId={ekskulId} ekskulName={ekskulName} />
           <p className="text-center text-[10px] font-medium tracking-wider text-slate-400">
             SIGAP SPENSAWA &bull; Sistem Informasi Guru Aktif &amp; Pengelolaan Akademik
           </p>
@@ -166,17 +222,17 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
     );
   }
 
-  // ── Render FormNilaiEkskul ──
   if (subMenu === 'nilai') {
     return (
       <FormNilaiEkskul
-        profile={profile}
+        profile={profile!}
+        ekskulId={ekskulId}
+        ekskulName={ekskulName}
         onBack={() => setSubMenu('menu')}
       />
     );
   }
 
-  // ── SUB-MENU: JURNAL ──
   if (subMenu === 'jurnal') {
     return (
       <motion.div
@@ -274,7 +330,6 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
     );
   }
 
-  // ── SUB-MENU: ANGGOTA ──
   if (subMenu === 'anggota') {
     return (
       <motion.div
@@ -289,8 +344,11 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div>
                   <div className="badge badge-soft badge-violet badge-sm uppercase tracking-widest">Anggota Ekskul</div>
-                  <h3 className="mt-1 text-sm font-bold text-slate-900">{profile.nama_ekstrakurikuler}</h3>
+                  <h3 className="mt-1 text-sm font-bold text-slate-900">{ekskulName}</h3>
                   <p className="text-[11px] text-slate-500">Total terdaftar: {anggotaEkskul.length} Siswa</p>
+                  {assignments.length > 1 && (
+                    <p className="text-[10px] text-violet-500 font-medium">{assignments.length} pembina aktif — data dibagikan bersama</p>
+                  )}
                 </div>
                 <button onClick={() => setSubMenu('menu')} className="btn btn-ghost btn-sm">
                   <ArrowLeft className="size-4" /> Kembali
@@ -371,7 +429,6 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
     );
   }
 
-  // ── MENU UTAMA ──
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -388,10 +445,28 @@ export default function PembinaEkskulDashboard({ setCurrentRole, daftarKelas, on
         >
           <div className="flex-1 flex-col items-start gap-1">
             <div className="badge badge-soft badge-violet badge-sm uppercase tracking-widest">Dashboard Pembina</div>
-            <h2 className="mt-0.5 text-xl font-extrabold text-slate-900 sm:text-2xl">
-              {profile.nama_ekstrakurikuler}
-            </h2>
+            {assignments.length > 1 ? (
+              <select
+                value={selectedEkskulIdx}
+                onChange={(e) => {
+                  setSelectedEkskulIdx(Number(e.target.value));
+                  setSubMenu('menu');
+                }}
+                className="select select-bordered select-sm font-extrabold text-slate-900 bg-transparent border-violet-300"
+              >
+                {assignments.map((a, idx) => (
+                  <option key={a.ekskul_id} value={idx}>{a.nama_ekskul}</option>
+                ))}
+              </select>
+            ) : (
+              <h2 className="mt-0.5 text-xl font-extrabold text-slate-900 sm:text-2xl">
+                {ekskulName}
+              </h2>
+            )}
             <p className="text-sm font-medium text-slate-500">{profile.nama_lengkap}</p>
+            {assignments.length > 1 && (
+              <p className="text-[10px] text-violet-500 font-medium">{assignments.length} pembina aktif — data dibagikan bersama</p>
+            )}
           </div>
           <div className="flex-none gap-2">
             {onSwitchRole && (

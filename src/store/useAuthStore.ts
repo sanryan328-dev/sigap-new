@@ -7,6 +7,12 @@ export interface MapelEntry {
   kelas: string[];
 }
 
+export interface ExtracurricularAssignment {
+  ekskul_id: string;
+  nama_ekskul: string;
+  is_primary: boolean;
+}
+
 export interface AuthUser {
   id: number;
   username: string;
@@ -22,6 +28,7 @@ export interface UserProfile {
   kelas_wali: string | null;
   nama_ekstrakurikuler: string | null;
   hari_piket?: string;
+  ekskul_assignments?: ExtracurricularAssignment[];
 }
 
 export type RoleView =
