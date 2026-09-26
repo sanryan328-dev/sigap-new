@@ -34,6 +34,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      bk_home_visits: {
+        Row: {
+          alamat: string | null
+          catatan: string
+          created_at: string | null
+          id: number
+          kelas: string
+          student_id: number
+          tanggal: string
+          tindak_lanjut: string | null
+          updated_at: string | null
+          user_id: number
+        }
+        Insert: {
+          alamat?: string | null
+          catatan: string
+          created_at?: string | null
+          id?: number
+          kelas: string
+          student_id: number
+          tanggal?: string
+          tindak_lanjut?: string | null
+          updated_at?: string | null
+          user_id: number
+        }
+        Update: {
+          alamat?: string | null
+          catatan?: string
+          created_at?: string | null
+          id?: number
+          kelas?: string
+          student_id?: number
+          tanggal?: string
+          tindak_lanjut?: string | null
+          updated_at?: string | null
+          user_id?: number
+        }
+        Relationships: []
+      }
       bk_records: {
         Row: {
           created_at: string | null
