@@ -14,6 +14,8 @@ interface TeachingJournal {
   catatan_kelas: string | null;
   created_at: string | null;
   updated_at: string | null;
+  ekskul_id?: string | null;
+  peserta?: { nama_siswa: string; kelas: string; status: string }[];
 }
 
 interface RiwayatJurnalProps {
@@ -50,20 +52,91 @@ export default function RiwayatJurnal({ setSubMenu, kelas, mataPelajaran }: Riwa
       const userIdNum = typeof rawUserId === 'string' ? parseInt(rawUserId) : rawUserId;
       if (!userIdNum) return;
 
-      const { data, error } = await supabase
+      const ekskulIds = (profile?.ekskul_assignments || []).map(e => e.ekskul_id);
+
+      let journalsData: TeachingJournal[] = [];
+
+      const { data: myJournals, error: errMy } = await supabase
         .from('teaching_journals')
         .select('*')
         .eq('user_id', userIdNum)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setJournals(data || []);
+      if (errMy) throw errMy;
+      journalsData = myJournals || [];
+
+      if (ekskulIds.length > 0) {
+        const { data: ekskulJournals, error: errEkskul } = await supabase
+          .from('teaching_journals')
+          .select('*')
+          .in('ekskul_id', ekskulIds)
+          .order('created_at', { ascending: false });
+
+        if (!errEkskul && ekskulJournals) {
+          const existingIds = new Set(journalsData.map(j => j.id));
+          for (const j of ekskulJournals) {
+            if (!existingIds.has(j.id)) {
+              journalsData.push(j);
+            }
+          }
+        }
+      }
+
+      journalsData.sort((a, b) => {
+        const da = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const db = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return db - da;
+      });
+
+      const ekskulJournalsOnly = journalsData.filter(j => j.kelas === 'Ekskul' || j.ekskul_id);
+      if (ekskulJournalsOnly.length > 0) {
+        const journalIds = ekskulJournalsOnly.map(j => j.id);
+        const { data: attendances } = await supabase
+          .from('student_attendances')
+          .select('teaching_journal_id, student_id, status')
+          .in('teaching_journal_id', journalIds);
+
+        const studentIds = [...new Set((attendances || []).map((a: any) => a.student_id))];
+        let studentsData: any[] = [];
+        if (studentIds.length > 0) {
+          const { data: sData } = await supabase
+            .from('students')
+            .select('id, nama_siswa, kelas')
+            .in('id', studentIds);
+          studentsData = sData || [];
+        }
+
+        const studentMap = new Map(studentsData.map((s: any) => [s.id, s]));
+        const attByJournal: Record<number, { student_id: string; status: string }[]> = {};
+        (attendances || []).forEach((a: any) => {
+          if (!attByJournal[a.teaching_journal_id]) attByJournal[a.teaching_journal_id] = [];
+          attByJournal[a.teaching_journal_id].push({ student_id: a.student_id, status: a.status });
+        });
+
+        journalsData = journalsData.map(j => {
+          if (j.kelas === 'Ekskul' || j.ekskul_id) {
+            const attList = attByJournal[j.id] || [];
+            const peserta = attList.map(a => {
+              const siswa = studentMap.get(a.student_id);
+              return {
+                nama_siswa: siswa?.nama_siswa || `Siswa #${a.student_id}`,
+                kelas: siswa?.kelas || '-',
+                status: a.status,
+              };
+            });
+            return { ...j, peserta };
+          }
+          return j;
+        });
+      }
+
+      setJournals(journalsData);
     } catch (err: any) {
       toast.error('Gagal memuat riwayat jurnal: ' + err.message);
     } finally {
       setLoading(false);
     }
-  }, [profile?.user_id]);
+  }, [profile?.user_id, profile?.ekskul_assignments]);
 
   useEffect(() => {
     fetchJournals();
@@ -249,6 +322,9 @@ export default function RiwayatJurnal({ setSubMenu, kelas, mataPelajaran }: Riwa
                   <th className="p-3 text-left font-bold">Jam Ke</th>
                   <th className="p-3 text-left font-bold">Materi</th>
                   <th className="p-3 text-left font-bold">Catatan</th>
+                  {journals.some(j => j.peserta && j.peserta.length > 0) && (
+                    <th className="p-3 text-left font-bold">Peserta</th>
+                  )}
                   <th className="p-3 text-center font-bold">Aksi</th>
                 </tr>
               </thead>
@@ -272,6 +348,28 @@ export default function RiwayatJurnal({ setSubMenu, kelas, mataPelajaran }: Riwa
                     <td className="p-3 max-w-[150px] truncate text-xs" title={item.catatan_kelas || ''}>
                       {item.catatan_kelas || '—'}
                     </td>
+                    {journals.some(j => j.peserta && j.peserta.length > 0) && (
+                      <td className="p-3 text-xs max-w-[220px]">
+                        {item.peserta && item.peserta.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {item.peserta.map((p, i) => (
+                              <span
+                                key={i}
+                                className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                  p.status === 'Hadir' ? 'bg-emerald-100 text-emerald-700'
+                                    : p.status === 'Sakit' ? 'bg-amber-100 text-amber-700'
+                                    : p.status === 'Izin' ? 'bg-blue-100 text-blue-700'
+                                    : 'bg-rose-100 text-rose-700'
+                                }`}
+                                title={`${p.nama_siswa} (${p.kelas}) — ${p.status}`}
+                              >
+                                {p.nama_siswa}
+                              </span>
+                            ))}
+                          </div>
+                        ) : '—'}
+                      </td>
+                    )}
                     <td className="p-3">
                       <div className="flex items-center justify-center gap-1.5">
                         <button

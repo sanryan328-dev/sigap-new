@@ -308,12 +308,43 @@ export default function DashboardMenu({ setCurrentRole, handleLogout, daftarKela
         if (range.gte) queryEkskul = queryEkskul.gte('created_at', range.gte).lte('created_at', range.lte);
         const { data, error } = await queryEkskul.order('created_at', { ascending: false });
         if (error) throw error;
-        dataToExport = data.map((d: any) => ({
-          'Tanggal Latihan': d.created_at ? new Date(d.created_at).toLocaleDateString('id-ID') : '-',
-          'Ekstrakurikuler': d.mata_pelajaran,
-          'Topik / Kegiatan': d.materi_pembelajaran,
-          'Catatan Evaluasi': d.catatan_kelas || '-',
-        }));
+
+        const journalIds = (data || []).map((d: any) => d.id);
+        let attMap = new Map<number, any[]>();
+        let studentMap = new Map<number, any>();
+        if (journalIds.length > 0) {
+          const { data: attendances } = await supabase
+            .from('student_attendances')
+            .select('teaching_journal_id, student_id, status')
+            .in('teaching_journal_id', journalIds);
+          const studentIds = [...new Set((attendances || []).map((a: any) => a.student_id))];
+          if (studentIds.length > 0) {
+            const { data: sData } = await supabase.from('students').select('id, nama_siswa, kelas').in('id', studentIds);
+            studentMap = new Map((sData || []).map((s: any) => [s.id, s]));
+          }
+          (attendances || []).forEach((a: any) => {
+            if (!attMap.has(a.teaching_journal_id)) attMap.set(a.teaching_journal_id, []);
+            attMap.get(a.teaching_journal_id)!.push(a);
+          });
+        }
+
+        dataToExport = data.map((d: any) => {
+          const attList = attMap.get(d.id) || [];
+          const pesertaHadir = attList.filter((a: any) => a.status === 'Hadir').map((a: any) => studentMap.get(a.student_id)?.nama_siswa || `-`).join(', ');
+          const pesertaSakit = attList.filter((a: any) => a.status === 'Sakit').map((a: any) => studentMap.get(a.student_id)?.nama_siswa || `-`).join(', ');
+          const pesertaIzin = attList.filter((a: any) => a.status === 'Izin').map((a: any) => studentMap.get(a.student_id)?.nama_siswa || `-`).join(', ');
+          const pesertaAlpa = attList.filter((a: any) => a.status === 'Alpa').map((a: any) => studentMap.get(a.student_id)?.nama_siswa || `-`).join(', ');
+          return {
+            'Tanggal Latihan': d.created_at ? new Date(d.created_at).toLocaleDateString('id-ID') : '-',
+            'Ekstrakurikuler': d.mata_pelajaran,
+            'Topik / Kegiatan': d.materi_pembelajaran,
+            'Catatan Evaluasi': d.catatan_kelas || '-',
+            'Hadir': pesertaHadir || '-',
+            'Sakit': pesertaSakit || '-',
+            'Izin': pesertaIzin || '-',
+            'Alpa': pesertaAlpa || '-',
+          };
+        });
         const ekskulNames = profile.ekskul_assignments?.map(e => e.nama_ekskul).join('_') || 'Ekskul';
         fileName = `Rekap_Jurnal_Ekskul_${ekskulNames}`;
 
