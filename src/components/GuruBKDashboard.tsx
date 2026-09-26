@@ -12,12 +12,26 @@ interface GuruBKDashboardProps {
   daftarKelas: string[];
 }
 
+interface HomeVisitRow {
+  id: number;
+  user_id: number;
+  student_id: number;
+  kelas: string;
+  tanggal: string;
+  alamat: string | null;
+  catatan: string;
+  tindak_lanjut: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  students?: { nama_siswa: string; nisn: string };
+}
+
 export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftarKelas }: GuruBKDashboardProps) {
   const profile = useAuthStore((s) => s.profile);
   const userId = useAuthStore(selectUserId);
   const storeLogout = useAuthStore((s) => s.logout);
   const handleLogout = handleLogoutProp ?? storeLogout;
-  const [subMenuBK, setSubMenuBK] = useState<'kelola_kasus' | 'rekap_kasus' | null>(null);
+  const [subMenuBK, setSubMenuBK] = useState<'kelola_kasus' | 'rekap_kasus' | 'home_visit' | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Data Master dari Database
@@ -51,9 +65,25 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
   });
   const [isEditKasus, setIsEditKasus] = useState(false);
 
+  // State Form & Riwayat Home Visit
+  const [filterKelasVisit, setFilterKelasVisit] = useState<string>('');
+  const [filterKelasVisitRiwayat, setFilterKelasVisitRiwayat] = useState<string>('');
+  const [listVisit, setListVisit] = useState<HomeVisitRow[]>([]);
+  const [isEditVisit, setIsEditVisit] = useState(false);
+  const [formVisit, setFormVisit] = useState({
+    id: '',
+    student_id: '',
+    kelas: '',
+    tanggal: new Date().toISOString().slice(0, 10),
+    alamat: '',
+    catatan: '',
+    tindak_lanjut: '',
+  });
+
   useEffect(() => {
     fetchMasterPelanggaran();
     fetchKasusBK();
+    fetchHomeVisits();
   }, [subMenuBK]);
 
   // ==========================================
@@ -124,6 +154,11 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
     fetchSiswa(filterKelasInput);
   }, [filterKelasInput]);
 
+  useEffect(() => {
+    if (!filterKelasVisit) return;
+    fetchSiswa(filterKelasVisit);
+  }, [filterKelasVisit]);
+
   // ==========================================
   // 📥 FETCH DATA GURU BK & MASTER DATA
   // ==========================================
@@ -186,6 +221,44 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
       console.error("Gagal menarik data kasus BK:", err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchHomeVisits = async () => {
+    try {
+      // 1. Tarik semua data catatan home visit
+      const { data: visitsData, error: visitsError } = await supabase
+        .from('bk_home_visits')
+        .select('id, user_id, student_id, kelas, tanggal, alamat, catatan, tindak_lanjut, created_at, updated_at')
+        .order('tanggal', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (visitsError) throw visitsError;
+
+      // 2. Tarik data siswa untuk pencocokan nama & nisn
+      const { data: studentsData, error: studentsError } = await supabase
+        .from('students')
+        .select('id, nama_siswa, nisn');
+
+      if (studentsError) throw studentsError;
+
+      // 3. Gabungkan secara manual berdasarkan id siswa
+      if (visitsData) {
+        const cleanData = visitsData.map((visit: HomeVisitRow) => {
+          const matchStudent = (studentsData || []).find(
+            (s: { id: number; nama_siswa: string; nisn: string }) => s.id.toString() === visit.student_id?.toString()
+          );
+          return {
+            ...visit,
+            students: matchStudent
+              ? { nama_siswa: matchStudent.nama_siswa, nisn: matchStudent.nisn }
+              : { nama_siswa: 'Siswa Tidak Ditemukan', nisn: '-' },
+          };
+        });
+        setListVisit(cleanData);
+      }
+    } catch (err) {
+      console.error("Gagal menarik data home visit:", err instanceof Error ? err.message : err);
     }
   };
 
@@ -283,6 +356,105 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
     }
   };
 
+  // ==========================================
+  // 🏠 HANDLER CATATAN HOME VISIT
+  // ==========================================
+  const resetFormVisit = () => {
+    setFormVisit({
+      id: '',
+      student_id: '',
+      kelas: '',
+      tanggal: new Date().toISOString().slice(0, 10),
+      alamat: '',
+      catatan: '',
+      tindak_lanjut: '',
+    });
+    setFilterKelasVisit('');
+    setIsEditVisit(false);
+  };
+
+  const handlePilihSiswaVisit = (studentId: string) => {
+    const siswaTerpilih = listSiswa.find(s => s.id.toString() === studentId);
+    setFormVisit(prev => ({
+      ...prev,
+      student_id: studentId,
+      kelas: siswaTerpilih?.kelas || prev.kelas,
+    }));
+  };
+
+  const handleSimpanVisit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formVisit.student_id) {
+      toast.error('Silakan pilih siswa terlebih dahulu.');
+      return;
+    }
+    if (!formVisit.catatan.trim()) {
+      toast.error('Catatan hasil kunjungan tidak boleh kosong.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const payload = {
+        user_id: parseInt(userId),
+        student_id: parseInt(formVisit.student_id),
+        kelas: formVisit.kelas,
+        tanggal: formVisit.tanggal,
+        alamat: formVisit.alamat.trim() || null,
+        catatan: formVisit.catatan.trim(),
+        tindak_lanjut: formVisit.tindak_lanjut.trim() || null,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (isEditVisit && formVisit.id) {
+        const { error } = await supabase
+          .from('bk_home_visits')
+          .update(payload)
+          .eq('id', formVisit.id);
+        if (error) throw error;
+        toast.success('Catatan home visit berhasil diperbarui!');
+      } else {
+        const { error } = await supabase
+          .from('bk_home_visits')
+          .insert([{ ...payload, created_at: new Date().toISOString() }]);
+        if (error) throw error;
+        toast.success('Catatan home visit berhasil disimpan!');
+      }
+
+      resetFormVisit();
+      fetchHomeVisits();
+    } catch (err) {
+      toast.error(`Gagal menyimpan catatan home visit: ${err instanceof Error ? err.message : err}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditVisit = (visit: HomeVisitRow) => {
+    setFormVisit({
+      id: String(visit.id),
+      student_id: String(visit.student_id),
+      kelas: visit.kelas,
+      tanggal: visit.tanggal || new Date().toISOString().slice(0, 10),
+      alamat: visit.alamat || '',
+      catatan: visit.catatan || '',
+      tindak_lanjut: visit.tindak_lanjut || '',
+    });
+    setFilterKelasVisit(visit.kelas);
+    setIsEditVisit(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleHapusVisit = async (id: string) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus catatan home visit ini secara permanen?')) {
+      setLoading(true);
+      await supabase.from('bk_home_visits').delete().eq('id', id);
+      toast.success('Catatan home visit berhasil dihapus.');
+      if (isEditVisit && formVisit.id === id) resetFormVisit();
+      fetchHomeVisits();
+      setLoading(false);
+    }
+  };
+
   const totalKasus = listKasus.length;
 
   // Hitung siswa UNIK yang masih aktif dibina (bukan jumlah baris kasus)
@@ -307,6 +479,16 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
   const kasusTerfilterRekap = filterKelasRekap 
     ? listKasus.filter(k => k.kelas === filterKelasRekap)
     : listKasus;
+
+  // Filter Siswa Berdasarkan Kelas Pilihan di Form Home Visit
+  const siswaTerfilterVisit = filterKelasVisit
+    ? listSiswa.filter(s => s.kelas === filterKelasVisit)
+    : [];
+
+  // Filter Data Halaman Riwayat Home Visit
+  const visitTerfilterRiwayat = filterKelasVisitRiwayat
+    ? listVisit.filter(v => v.kelas === filterKelasVisitRiwayat)
+    : listVisit;
 
   // ==========================================
   // 📋 TAMPILAN SUB-MENU 1: KELOLA KASUS (INPUT FORM)
@@ -1029,6 +1211,228 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
   }
 
   // ==========================================
+  // 🏠 TAMPILAN SUB-MENU 3: CATATAN HOME VISIT (INPUT + RIWAYAT)
+  // ==========================================
+  if (subMenuBK === 'home_visit') {
+    return (
+      <div className="min-h-screen bg-slate-50 p-4 sm:p-6 flex flex-col items-center w-full">
+        <div className="w-full max-w-3xl bg-white rounded-2xl shadow-sm border border-slate-100 p-5 sm:p-8 space-y-6">
+          <div className="flex justify-between items-center border-b border-slate-100 pb-5">
+            <div>
+              <span className="text-sm font-semibold text-sky-600 bg-sky-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                BK SPENSAWA
+              </span>
+              <h2 className="text-lg sm:text-xl font-bold text-slate-800 mt-1.5">
+                {isEditVisit ? '✏️ Edit Catatan Home Visit' : '🏠 Input Catatan Home Visit'}
+              </h2>
+            </div>
+            <button
+              onClick={() => {
+                setSubMenuBK(null);
+                resetFormVisit();
+              }}
+              className="text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer font-medium"
+            >
+              ⬅️ Kembali
+            </button>
+          </div>
+
+          {/* FORM INPUT HOME VISIT */}
+          <form onSubmit={handleSimpanVisit} className="space-y-4">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60 space-y-4">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-600 mb-1">Tanggal Kunjungan</label>
+                <input
+                  type="date"
+                  value={formVisit.tanggal}
+                  onChange={(e) => setFormVisit(prev => ({ ...prev, tanggal: e.target.value }))}
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:border-sky-500"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-600 mb-1">Pilih Kelas / Rombel Siswa</label>
+                  <select
+                    value={filterKelasVisit}
+                    onChange={(e) => {
+                      setFilterKelasVisit(e.target.value);
+                      setFormVisit(prev => ({ ...prev, student_id: '', kelas: '' }));
+                    }}
+                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:border-sky-500"
+                    required
+                  >
+                    <option value="">-- Pilih Kelas --</option>
+                    {loadingKelasBinaan ? (
+                      <option value="" disabled>Memuat kelas binaan...</option>
+                    ) : Array.from(new Set([
+                      ...kelasBinaan,
+                      ...(isEditVisit && formVisit.kelas ? [formVisit.kelas] : []),
+                    ])).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).map(k => (
+                      <option key={k} value={k}>{k}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-600 mb-1">Pilih Nama Siswa</label>
+                  <select
+                    value={formVisit.student_id}
+                    onChange={(e) => handlePilihSiswaVisit(e.target.value)}
+                    disabled={!filterKelasVisit}
+                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white disabled:bg-slate-100 font-medium"
+                    required
+                  >
+                    <option value="">{filterKelasVisit ? `-- Pilih Nama (${siswaTerfilterVisit.length} Siswa) --` : '-- Pilih Kelas Dahulu --'}</option>
+                    {siswaTerfilterVisit.map((s) => (
+                      <option key={s.id} value={s.id}>{s.nama_siswa}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-600 mb-1">Alamat Tujuan Kunjungan</label>
+                <input
+                  type="text"
+                  value={formVisit.alamat}
+                  onChange={(e) => setFormVisit(prev => ({ ...prev, alamat: e.target.value }))}
+                  placeholder="Contoh: Jl. Melati No. 12, RT 03 / RW 05"
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:border-sky-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-semibold text-slate-600 mb-1">Catatan / Hasil Kunjungan</label>
+              <textarea
+                value={formVisit.catatan}
+                onChange={(e) => setFormVisit(prev => ({ ...prev, catatan: e.target.value }))}
+                placeholder="Temuan selama kunjungan: kondisi rumah, keadaan keluarga, perkembangan belajar siswa, dsb."
+                className="w-full p-2 border border-slate-300 rounded-lg text-sm h-24 bg-white resize-none focus:border-sky-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-semibold text-slate-600 mb-1">Tindak Lanjut</label>
+              <textarea
+                value={formVisit.tindak_lanjut}
+                onChange={(e) => setFormVisit(prev => ({ ...prev, tindak_lanjut: e.target.value }))}
+                placeholder="Rencana tindak lanjut setelah kunjungan (opsional)..."
+                className="w-full p-2 border border-slate-300 rounded-lg text-sm h-16 bg-white resize-none focus:border-sky-500"
+              />
+            </div>
+
+            <div className="flex justify-end items-center pt-3 border-t border-slate-100 gap-3">
+              {isEditVisit && (
+                <button
+                  type="button"
+                  onClick={resetFormVisit}
+                  className="text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg transition-colors cursor-pointer font-medium"
+                >
+                  Batal Edit
+                </button>
+              )}
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2 rounded-lg text-sm font-bold cursor-pointer transition-colors disabled:opacity-60"
+              >
+                {loading ? 'Menyimpan...' : isEditVisit ? 'Simpan Perubahan' : 'Catat Home Visit'}
+              </button>
+            </div>
+          </form>
+
+          {/* RIWAYAT HOME VISIT */}
+          <div className="border-t border-slate-100 pt-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-slate-800 text-sm">📋 Riwayat Home Visit</h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">Total {listVisit.length} catatan kunjungan tercatat</p>
+              </div>
+              <select
+                value={filterKelasVisitRiwayat}
+                onChange={(e) => setFilterKelasVisitRiwayat(e.target.value)}
+                className="p-2 border border-slate-300 rounded-lg text-sm bg-white"
+              >
+                <option value="">Semua Kelas</option>
+                {Array.from(new Set([...kelasBinaan, ...listVisit.map(v => v.kelas).filter(Boolean)]))
+                  .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+                  .map(k => (
+                    <option key={k} value={k}>{k}</option>
+                  ))}
+              </select>
+            </div>
+
+            {visitTerfilterRiwayat.length === 0 ? (
+              <div className="text-center py-8 bg-slate-50 rounded-xl border border-slate-200/60">
+                <p className="text-3xl mb-2">🏠</p>
+                <p className="text-sm font-medium text-slate-500">
+                  {listVisit.length === 0
+                    ? 'Belum ada catatan home visit.'
+                    : 'Tidak ada catatan untuk kelas ini.'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {visitTerfilterRiwayat.map((visit) => (
+                  <div
+                    key={visit.id}
+                    className="border border-slate-200 rounded-xl p-4 bg-white hover:border-sky-300 transition-colors"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+                      <div>
+                        <p className="font-bold text-slate-800 text-sm">{visit.students?.nama_siswa}</p>
+                        <p className="text-[11px] text-slate-500">
+                          Kelas {visit.kelas}
+                          {visit.students?.nisn && visit.students.nisn !== '-' && ` • NISN ${visit.students.nisn}`}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200 px-2 py-1 rounded-md whitespace-nowrap">
+                          📅 {visit.tanggal ? new Date(visit.tanggal + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
+                        </span>
+                        <button
+                          onClick={() => handleEditVisit(visit)}
+                          className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded text-[10px] font-semibold cursor-pointer hover:bg-amber-100"
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          onClick={() => handleHapusVisit(String(visit.id))}
+                          className="px-2 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded text-[10px] font-semibold cursor-pointer hover:bg-red-100"
+                        >
+                          🗑️ Hapus
+                        </button>
+                      </div>
+                    </div>
+
+                    {visit.alamat && (
+                      <p className="text-[11px] text-slate-600 mb-2">
+                        <span className="font-semibold text-slate-700">📍 Alamat:</span> {visit.alamat}
+                      </p>
+                    )}
+                    <p className="text-xs text-slate-700 bg-slate-50 border border-slate-200/60 rounded-lg p-2.5 mb-2 whitespace-pre-wrap">
+                      {visit.catatan}
+                    </p>
+                    {visit.tindak_lanjut && (
+                      <p className="text-[11px] text-slate-600">
+                        <span className="font-semibold text-slate-700">➡️ Tindak Lanjut:</span> {visit.tindak_lanjut}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
   // 📊 MENU UTAMA DASHBOARD GURU BK
   // ==========================================
   return (
@@ -1074,6 +1478,17 @@ export default function GuruBKDashboard({ handleLogout: handleLogoutProp, daftar
             <h3 className="font-bold text-slate-800 text-sm group-hover:text-emerald-600">Buku Rekap & Filter</h3>
             <p className="text-[11px] text-slate-500 mt-1">
               Lihat riwayat pembinaan historis seluruh siswa, urutkan per rombel kelas untuk rapat pleno kenaikan.
+            </p>
+          </button>
+
+          <button
+            onClick={() => setSubMenuBK('home_visit')}
+            className="flex flex-col items-start p-5 bg-white border border-slate-200 rounded-xl hover:border-sky-500 hover:shadow-md transition-all text-left group cursor-pointer"
+          >
+            <div className="text-xl mb-2 p-2 bg-sky-50 rounded-lg group-hover:bg-sky-600 group-hover:text-white transition-colors">🏠</div>
+            <h3 className="font-bold text-slate-800 text-sm group-hover:text-sky-600">Catat Home Visit</h3>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Input catatan kunjungan rumah siswa beserta tanggal, alamat, hasil kunjungan, dan tindak lanjut.
             </p>
           </button>
         </div>
